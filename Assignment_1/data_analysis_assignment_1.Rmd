@@ -13,94 +13,92 @@ output:
 rm(list=ls())
 
 library(tidyverse)
-library(lspline)
-library(cowplot)
-library(boot)
-library(estimatr)
-library(huxtable)
-library(stargazer)
 library(modelsummary)
+library(fixest)
+library(dplyr)
+library(kableExtra)
+library(huxtable)
+library(data.table)
+library(stargazer)
+library(haven)
+library(estimatr)
+library(boot)
 
 ```
 
-```{r}
+```{r include=FALSE}
+# Importing data
+#data_all <- read_csv("https://osf.io/4ay9x/download")
 
 data_all <- read_csv(paste0("/Users/ghazalayobi/Downloads/morg-2014-emp.csv"), 
                      col_types = cols(.default = "?", 
                                       state = "c"))
 ```
 
-```{r echo=TRUE, warning=FALSE}
+```{r warning=FALSE, include=FALSE}
+# Filters and Data Transformations
 
-data <- data_all %>% filter(occ2012==0010) %>% filter(grade92>=41)
+data <- data_all %>% filter(occ2012==800)
+data <-  data.table(data)
 
 data <- data %>% mutate(female=as.numeric(sex==2)) %>% 
   mutate(w=earnwke/uhours) %>%
   mutate(lnw=log(w))
 
-data %>% filter(w>=1) %>% dplyr::select(earnwke,uhours,w) %>% summary()
-
-
-tabulate(data$female)
-table(data$occ2012,data$female)
+data$gender <- as.numeric(data$sex)
+data$gender[data$gender==1] <- "Male"
+data$gender[data$gender==2] <- "Female"
+data$gender <- as.character(data$gender)
 
 
 ```
 
-```{r echo=TRUE, warning=FALSE}
-reg1<-lm(lnw~female,data) 
-summary(reg1)
 
-reg2 <- lm_robust(lnw ~ female, data = data, se_type = "HC1")
-summary(reg2)
+```{r echo=FALSE, fig.align = 'left'}
 
-msummary(list(reg1, reg2),
+# Observations
+data[, .N, by = data$gender] %>% kbl(caption = "Table : 1")  %>% kable_classic(full_width=F)
+```
+
+
+```{r echo=FALSE}
+# Summary
+
+P95 <- function(x){ quantile(x,.95,na.rm=T)}
+datasummary(w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data, title = "Table : 2", )
+
+
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE, fig.align = 'left'}
+
+reg1 <- feols(w~female, data)
+reg2 <- lm(lnw~female,data) 
+reg3 <- lm_robust(lnw ~ female, data = data)
+reg4 <- lm_robust(lnw ~ grade92, data = data)
+
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+msummary(list("Wage (FeOLS)" = reg1, "Log Wage (LM)" = reg2, "Log Wage (LM Robust)" = reg3,
+              "Log Wage(LM Robust)" = reg4),
          fmt="%.4f",
-         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
-         stars=c('*' = .05, '**' = .01)
-)
-
-```
-
-```{r echo=TRUE, warning=FALSE}
-
-
-reg3 <- lm_robust(lnw ~ grade92, data = data, se_type = "HC1")
-reg3
-
-# 
-
-unique(data$grade92)
-# 39 - 46 grades
-reg5 <- lm_robust(lnw ~ lspline(grade92, c(42, 43, 44, 45, 46)), data = data, se_type = "HC1")
-reg5
-
-gm <-  c('R2' = 'R-squared (%)',
-         'se_type' = 'SE type')
-
-cm <- c('R2' = 'R-squared (%)',
-        'lspline(grade92, c(42, 46))2' = 'spline(grade92, c(42, 43, 44, 45, 46))',
-        '(Intercept)' = 'Constant')
-
-msummary(list(reg1, reg2, reg3, reg5),
-         fmt="%.3f",
-         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within',
          stars=c('*' = .05, '**' = .01),
-         coef_rename = cm,
-         #output = paste(output,"ch09_reg2-R.tex",sep="")
+         title = "Table : 3"
 )
-```
 
-```{r echo=TRUE, warning=FALSE}
-#lowess
-reg6 <- loess(lnw ~ grade92, data, control = loess.control(surface = "direct"))
-summary(reg6)
-
-loess(lnw ~ grade92, data)
 ```
 
 
-```{r}
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+
+data <- data %>% filter(grade92 >= 41)
 
 
 data <- data %>% mutate(
@@ -109,62 +107,98 @@ data <- data %>% mutate(
   ed_BA=as.numeric(grade92==43),
   ed_MA=as.numeric(grade92==44),
                       ed_Profess = as.numeric(grade92==45),
-                      ed_PhD = as.numeric(grade92==46)
-)
+                      ed_PhD = as.numeric(grade92==46))
 
-reg8 <- lm_robust(lnw ~ female, data=data,se_type = "HC1")
+
+
+reg5 <- lm_robust(lnw ~ female, data=data, se_type = "HC1")
 
 # Base is ed_Associate_voc
-reg9 <- lm_robust(lnw ~ female + ed_Associate_ap +ed_BA + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg6 <- lm_robust(lnw ~ female + ed_Associate_ap +ed_BA + ed_MA + ed_Profess + ed_PhD, data = data, se_type = "HC1")
+
 
 # Base is ed_Associate_ap
-reg10 <- lm_robust(lnw ~ female + ed_Associate_voc +ed_BA + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg7 <- lm_robust(lnw ~ female + ed_Associate_voc +ed_BA + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_BA
-reg11 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg8 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_MA
-reg12 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg9 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_Profess
-reg12 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_PhD, data=data, se_type = "HC1")
+reg10 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_PhD
-reg13 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_Profess, data=data, se_type = "HC1")
+reg11 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_Profess, data=data, se_type = "HC1")
 
 
-huxreg(reg8, reg9, reg10, reg11, reg12, reg13 ,statistics = c(N = "nobs", R2 = "r.squared"))
+```
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+msummary(list(reg5, reg6, reg11),
+         fmt="%.4f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
+         stars=c('*' = .05, '**' = .01),
+         title = "Table : 4"
+         )
 
 ```
 
 
-```{r echo=TRUE, warning=FALSE}
+```{r warning=FALSE, include=FALSE}
+# Interaction between gender and education levels
+
+reg12 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==1), se_type = "HC1")
+
+reg13 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==0), se_type = "HC1")
+
+reg14 <- lm_robust(lnw ~ grade92 + female + female*ed_Associate_ap + female*ed_BA + female*ed_MA + female*ed_Profess + female*ed_PhD, data=data, se_type = "HC1")
+
+
+```
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# problem
+
+msummary(list("Women (log Wage)" = reg12, "Men (log Wage)" = reg13, "All (log Wage)" = reg14),
+         fmt="%.4f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
+         stars=c('*' = .05, '**' = .01),
+         title = "Table : 5"
+         )
+```
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 ##############################
 # graphs
 ##############################
 
 graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
-  geom_smooth(method="loess", color = "#10a53dFF") +
-  scale_x_continuous(expand=c(0.01, 0.01), limits = c(37, 47),   breaks=seq(37, 47,   by=1)) + 
+  geom_smooth(method="loess", color = "#10a53dFF", formual = 'y ~ x') +
+  scale_x_continuous(expand=c(0.01, 0.01), limits = c(40.5, 46.5),   breaks=seq(40, 47,   by=1)) + 
   scale_y_continuous(expand=c(0.01, 0.01),limits = c(1.5, 4.5), breaks=seq(1.5, 4.5, by=0.50)) +
   labs(x = "grade92 (years)",y = "ln(earnings per hour)")+
   theme_light() 
 graph1
 
-
 graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
-  geom_smooth(method="loess", color = "#10a53dFF") +
-  scale_x_continuous(expand=c(0.01, 0.01), limits = c(42, 47),   breaks=seq(37, 47,   by=1)) + 
+  geom_smooth(method="lm", color = "#10a53dFF", formual = 'y ~ x') +
+  scale_x_continuous(expand=c(0.01, 0.01), limits = c(40.5, 46.5),   breaks=seq(40, 47,   by=1)) + 
   scale_y_continuous(expand=c(0.01, 0.01),limits = c(1.5, 4.5), breaks=seq(1.5, 4.5, by=0.50)) +
   labs(x = "grade92 (years)",y = "ln(earnings per hour)")+
   theme_light() 
 graph2
 
+
 ```
 
-```{r echo=TRUE}
+```{r echo=FALSE}
 
 #####################################
 # bootstrap
@@ -191,15 +225,14 @@ bstps<- ggplot(data=b_earnings_female, aes(`_b_female`)) +
   geom_histogram(aes(y = (..count..)/sum(..count..)), binwidth = 0.025,  center=0.0125, closed="left", 
                  color = "#3a5e8cFF" , fill = "#3a5e8cFF",
                  size = 0.2, alpha = 0.8,  show.legend=F, na.rm=TRUE) +
-  geom_segment(aes(x = -0.21, y = 0, xend = -0.21, yend = 0.2), color = "#10a53dFF", size = 1)+
-  annotate("text", x = -0.18, y = 0.19, label = "mean", size=2.5) +
-  coord_cartesian(xlim = c(-0.4, 0), ylim = c(0, 0.2)) +
+  geom_segment(aes(x = -0.19, y = 0, xend = -0.19, yend = 0.35), color = "#10a53dFF", size = 1)+
+  annotate("text", x = -0.18, y = 0.35, label = "mean", size=2.5) +
+  coord_cartesian(xlim = c(-0.3, 0), ylim = c(0, 0.4)) +
   labs(x = "Slope coefficients from bootstrap samples",y = "Percent")+
-  scale_y_continuous(expand = c(0.0,0.0), limits = c(0,0.2), 
+  scale_y_continuous(expand = c(0.0,0.0), limits = c(0,0.5), 
                      labels = scales::percent_format(accuracy = 1)) +
   theme_light() 
 bstps
-
 
 
 ```
