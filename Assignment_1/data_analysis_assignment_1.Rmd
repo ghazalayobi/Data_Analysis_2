@@ -3,7 +3,7 @@ title: "Data Analysis: Assignment: 1"
 author: "Ghazal and Shah Ali"
 output:
   prettydoc::html_pretty:
-    theme: cayman
+    theme: architect
     highlight: github
 ---
 
@@ -45,6 +45,8 @@ data <- data %>% mutate(female=as.numeric(sex==2)) %>%
   mutate(w=earnwke/uhours) %>%
   mutate(lnw=log(w))
 
+data <- data %>% filter(grade92 >= 41)
+
 data$gender <- as.numeric(data$sex)
 data$gender[data$gender==1] <- "Male"
 data$gender[data$gender==2] <- "Female"
@@ -65,26 +67,45 @@ data[, .N, by = data$gender] %>% kbl(caption = "Table : 1")  %>% kable_classic(f
 # Summary
 
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
-datasummary(w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data, title = "Table : 2", )
+datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data, title = "Table : 2", )
 
 
+```
+
+```{r include=FALSE}
+data <- data %>% filter(w >=1)
+```
+
+```{r echo=FALSE, fig.height=4, fig.width=4}
+
+figure1 <- ggplot(data = data, aes(x = w)) + 
+  geom_density(color = "#3a5e8cFF") + 
+  ggtitle("Figure : 1") + 
+  theme_light() +
+  labs(x = "Wage",y = "Density")
+
+figure2 <- ggplot(data = data, aes(x = lnw)) + 
+  geom_density(color = "#3a5e8cFF") + 
+  ggtitle("Figure : 2") + 
+  theme_light() +
+  labs(x = "Log of Wage",y = "Density")
+figure1
+figure2
 ```
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE, fig.align = 'left'}
 
-reg1 <- feols(w~female, data)
+reg1 <- lm(w~female, data)
 reg2 <- lm(lnw~female,data) 
-reg3 <- lm_robust(lnw ~ female, data = data)
-reg4 <- lm_robust(lnw ~ grade92, data = data)
+
 
 ```
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
-msummary(list("Wage (FeOLS)" = reg1, "Log Wage (LM)" = reg2, "Log Wage (LM Robust)" = reg3,
-              "Log Wage(LM Robust)" = reg4),
+msummary(list("Wage (LM)" = reg1, "Log Wage (LM)" = reg2),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within',
          stars=c('*' = .05, '**' = .01),
@@ -98,9 +119,6 @@ msummary(list("Wage (FeOLS)" = reg1, "Log Wage (LM)" = reg2, "Log Wage (LM Robus
 ```{r message=FALSE, warning=FALSE, include=FALSE}
 
 
-data <- data %>% filter(grade92 >= 41)
-
-
 data <- data %>% mutate(
   ed_Associate_voc=as.numeric(grade92==41),
   ed_Associate_ap=as.numeric(grade92==42),
@@ -111,33 +129,34 @@ data <- data %>% mutate(
 
 
 
-reg5 <- lm_robust(lnw ~ female, data=data, se_type = "HC1")
+reg3 <- lm_robust(lnw ~ female, data=data, se_type = "HC1")
 
+reg4 <- lm_robust(lnw ~ female + grade92, data = data)
 # Base is ed_Associate_voc
-reg6 <- lm_robust(lnw ~ female + ed_Associate_ap +ed_BA + ed_MA + ed_Profess + ed_PhD, data = data, se_type = "HC1")
+reg5 <- lm_robust(lnw ~ female + ed_Associate_ap +ed_BA + ed_MA + ed_Profess + ed_PhD, data = data, se_type = "HC1")
 
 
 # Base is ed_Associate_ap
-reg7 <- lm_robust(lnw ~ female + ed_Associate_voc +ed_BA + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg6 <- lm_robust(lnw ~ female + ed_Associate_voc +ed_BA + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_BA
-reg8 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg7 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_MA
-reg9 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+reg8 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_Profess
-reg10 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_PhD, data=data, se_type = "HC1")
+reg9 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_PhD, data=data, se_type = "HC1")
 
 # Base is ed_PhD
-reg11 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_Profess, data=data, se_type = "HC1")
+reg10 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_Profess, data=data, se_type = "HC1")
 
 
 ```
 
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
-msummary(list(reg5, reg6, reg11),
+msummary(list(reg3, reg4, reg5),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
          stars=c('*' = .05, '**' = .01),
@@ -150,11 +169,13 @@ msummary(list(reg5, reg6, reg11),
 ```{r warning=FALSE, include=FALSE}
 # Interaction between gender and education levels
 
-reg12 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==1), se_type = "HC1")
 
-reg13 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==0), se_type = "HC1")
 
-reg14 <- lm_robust(lnw ~ grade92 + female + female*ed_Associate_ap + female*ed_BA + female*ed_MA + female*ed_Profess + female*ed_PhD, data=data, se_type = "HC1")
+reg11 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==1), se_type = "HC1")
+
+reg12 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data = data %>% filter(female==0), se_type = "HC1")
+
+reg13 <- lm_robust(lnw ~ grade92 + female + female*ed_Associate_ap + female*ed_BA + female*ed_MA + female*ed_Profess + female*ed_PhD, data=data, se_type = "HC1")
 
 
 ```
@@ -163,7 +184,7 @@ reg14 <- lm_robust(lnw ~ grade92 + female + female*ed_Associate_ap + female*ed_B
 
 # problem
 
-msummary(list("Women (log Wage)" = reg12, "Men (log Wage)" = reg13, "All (log Wage)" = reg14),
+msummary(list("Women (log Wage)" = reg11, "Men (log Wage)" = reg12, "All (log Wage)" = reg13),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
          stars=c('*' = .05, '**' = .01),
@@ -172,7 +193,7 @@ msummary(list("Women (log Wage)" = reg12, "Men (log Wage)" = reg13, "All (log Wa
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=4}
 ##############################
 # graphs
 ##############################
@@ -182,8 +203,9 @@ graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_smooth(method="loess", color = "#10a53dFF", formual = 'y ~ x') +
   scale_x_continuous(expand=c(0.01, 0.01), limits = c(40.5, 46.5),   breaks=seq(40, 47,   by=1)) + 
   scale_y_continuous(expand=c(0.01, 0.01),limits = c(1.5, 4.5), breaks=seq(1.5, 4.5, by=0.50)) +
-  labs(x = "grade92 (years)",y = "ln(earnings per hour)")+
-  theme_light() 
+  labs(x = "Grade92 (Education Levels)",y = "ln(earnings per hour)")+
+  theme_light() +
+  ggtitle("Figure 1")
 graph1
 
 graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
@@ -191,14 +213,16 @@ graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_smooth(method="lm", color = "#10a53dFF", formual = 'y ~ x') +
   scale_x_continuous(expand=c(0.01, 0.01), limits = c(40.5, 46.5),   breaks=seq(40, 47,   by=1)) + 
   scale_y_continuous(expand=c(0.01, 0.01),limits = c(1.5, 4.5), breaks=seq(1.5, 4.5, by=0.50)) +
-  labs(x = "grade92 (years)",y = "ln(earnings per hour)")+
-  theme_light() 
+  labs(x = "Grade92 (Education Levels)",y = "ln(earnings per hour)")+
+  theme_light() +
+  ggtitle("Figure 2")
 graph2
 
 
 ```
 
-```{r echo=FALSE}
+
+```{r eval=FALSE, include=FALSE}
 
 #####################################
 # bootstrap
