@@ -23,11 +23,8 @@ library(ggplot2)
 
 ```{r include=FALSE}
 # Importing data
-#data_all <- read_csv("https://osf.io/4ay9x/download")
+data_all <- read_csv("https://osf.io/4ay9x/download")
 
-data_all <- read_csv(paste0("/Users/ghazalayobi/Downloads/morg-2014-emp.csv"), 
-                     col_types = cols(.default = "?", 
-                                      state = "c"))
 ```
 
 
