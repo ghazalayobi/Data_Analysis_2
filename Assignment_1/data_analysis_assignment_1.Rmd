@@ -1,9 +1,6 @@
 ---
-title: "Data Analysis: Assignment: 1"
-author: "Ghazal and Shah Ali"
 output: pdf_document
 ---
-
 
 ```{r include=FALSE}
 # Libraries
@@ -18,8 +15,10 @@ library(data.table)
 library(stargazer)
 library(estimatr)
 library(boot)
+library(ggplot2)
 
 ```
+
 
 
 ```{r include=FALSE}
@@ -30,7 +29,6 @@ data_all <- read_csv(paste0("/Users/ghazalayobi/Downloads/morg-2014-emp.csv"),
                      col_types = cols(.default = "?", 
                                       state = "c"))
 ```
-
 
 
 ```{r warning=FALSE, message = FALSE, include=FALSE}
@@ -52,12 +50,31 @@ data$gender <- as.character(data$gender)
 
 
 ```
+## Data Analysis: Assignment: 1
+## Ghazal Ayobi and Shah Ali Gardezi
+
+## Introduction
+For this assignment we use Current Population Survey (CPS) which can be accessed [**here**.](https://osf.io/4ay9x/) The occupation that we have selected for this exercise is the _**Accountants and Auditor**_, with census occupation code _**0800**_.
+
+## Data Transformation
+As a process of filtering and transforming as we created new variables such as _**female**_ which is assigned a binary value of _**1**_, hourly wage_**(w)**_ which is calculated by dividing the weekly earnings (earnwke) by the number of hours (uhours), and log of wage _**(lnw)**_. We also created a character variable called _**gender**_ and using sex variable for MALE and FEMALE. Our sample is varied with high number of females (992) compared to men (573) as shown in Table 1.
+Descriptive summary of the main variables in our dataset can be found Table 2. From the table we infer that because of the presence of high hourly wage _**(w)**_ values like USD 346 per hour, mean tends to be to the right of the median thus making the sample distribution rightly skewed. Similarly, we see that there are certain people who work more than 40 hours (maximum value of 92 hours a week) which is also the cause for skewness. Moreover, there is also the presence of extreme values. For example, the minimum wage value is computed out to be USD 0.01 which is highly unlikely in USA thus we excluded  the data points for wage value below USD 1. 
+
+## Analysis
+
+Before we began our regression, we visualized the wage distribution using ggplot and found that the hourly wage (w) is rightly skewed. Thus, we will be using log of wage _**ln(w)**_ for our regression analysis. The distribution curve for ln(w) is shown in Figure 2. We now begin regression analysis in order to find out whether there exists a wage gap based on gender. Table 3 summarizes the results of regression for unconditional gender gap. There are two regressions, the first regression is level-level regression which shows that females on average tend to earn USD 5.5 less than their male counterparts. This wage gap is significant at 1% significant level. The second regression is log-level regression which show that females on average earn 18% less than males and this coefficient is significant with more than 99.9% confidence level.
+
+Our next aim is to find out wage gap based on different levels of education (description of different education level are shown in the Appendix). Table 4 summarizes the result of the multivariate regressions. To start off the model 2 of Table 4 we conditioned gender gap on education and found that females on average earn 14.7 % less than males and this coefficient is significant at 1% significant level. We then proceeded to uncover the wage disparity, based on different levels of education.  Model 3, shows the results of comparing employees of same gender with different education levels, using Associate-vocational degree as the baseline variable. We select values with more than 99 % confidence level, for example in the same gender employees with Bachelor degree tend to earn on average 33.3% more than employees with Associate- vocational degree.
+
+To gain a deeper understanding, we now run a regression with interaction terms using the same base variable. In the Table 5, the ALL regression column reveals, that even for women with higher education level, there exists a gender gap with 99% confidence level. For example, women with a Masters degree earns on an average 37.8 % less than males with Masters degree. 
+In order to summarize the findings, we see that with same level of education women earn less than men. We further confirm this by performing bootstrap simulations for 1000 times and the result continued to be similar
 
 
-```{r echo=FALSE, fig.align = 'left', warning=FALSE, message = FALSE}
+
+```{r echo=FALSE, warning=FALSE, message = FALSE}
 
 # Observations
-data[, .N, by = data$gender] %>% kbl()  %>% kable_classic(full_width=F)
+data[, .N, by = data$gender] %>% kbl(caption = "")  %>% kable_classic(full_width=F)
 ```
 
 
@@ -65,7 +82,7 @@ data[, .N, by = data$gender] %>% kbl()  %>% kable_classic(full_width=F)
 # Summary
 
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
-datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data )
+datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data, title = "" )
 
 
 ```
@@ -77,7 +94,7 @@ data <- data %>% filter(w >=1)
 ```
 
 
-```{r message=FALSE, warning=FALSE, include=FALSE, fig.align = 'left'}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 
 reg1 <- lm(w~female, data)
 reg2 <- lm(lnw~female,data) 
@@ -92,7 +109,8 @@ reg2 <- lm(lnw~female,data)
 msummary(list("Wage (LM)" = reg1, "Log Wage (LM)" = reg2),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within',
-         stars=c('*' = .05, '**' = .01)
+         stars=c('*' = .05, '**' = .01),
+         title = ""
 )
 
 ```
@@ -144,7 +162,8 @@ reg10 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + e
 msummary(list(reg3, reg4, reg5),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
-         stars=c('*' = .05, '**' = .01)
+         stars=c('*' = .05, '**' = .01),
+         title = ""
          )
 
 ```
@@ -173,13 +192,14 @@ msummary(list("Women (log Wage)" = reg11, "Men (log Wage)" = reg12, "All (log Wa
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
          stars=c('*' = .05, '**' = .01),
-         title = "Table : 5"
+         title = ""
          )
 ```
 
 
+```{r echo=FALSE, warning=FALSE, message = FALSE, fig.height=3.5, fig.width=3.5, fig.pos='h', fig.align='center'}
 
-```{r echo=FALSE, warning=FALSE, message = FALSE, fig.height=3, fig.width=3, fig.pos='h'}
+# Non Parametric Regression shown by Loess
 graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
   geom_smooth(method="loess", color = "#10a53dFF", formual = 'y ~ x') +
@@ -191,6 +211,14 @@ graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
 graph1
 
 
+
+
+```
+
+```{r echo=FALSE, warning=FALSE, message = FALSE, fig.height=3.5, fig.width=3.5, fig.pos='h', fig.align='center'}
+
+# Log of Wage density Distribution
+
 figure1 <- ggplot(data = data, aes(x = lnw)) + 
   geom_density(color = "#3a5e8cFF") + 
   ggtitle("Figure : 2") + 
@@ -201,8 +229,9 @@ figure1
 ```
 
 
-
 ```{r eval=FALSE, include=FALSE}
+
+# Parametric Regression shown by Linear Regression
 graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
   geom_smooth(method="lm", color = "#10a53dFF", formual = 'y ~ x') +
@@ -216,17 +245,15 @@ graph2
 ```
 
 
+```{r eval=FALSE, fig.height=3.5, fig.width=3.5, include=FALSE}
 
-
-
-```{r echo=FALSE, fig.height=4, fig.width=4}
-
+# Wage density Distribution
 figure2 <- ggplot(data = data, aes(x = w)) + 
   geom_density(color = "#3a5e8cFF") + 
   ggtitle("Figure : 1") + 
   theme_light() +
   labs(x = "Wage",y = "Density")
-
+figure2 
 
 ```
 
@@ -269,5 +296,8 @@ bstps
 
 ```
 
+## Appendix
 
+Degree names of grade92 education levels and their variables names used in our code were as follows;
+Associate- vocational (ed_Associate_voc), Associate-academic program(ed_Associate_ap), Bachelors(ed_BA), Masters(ed_MA), Professional(ed_Profess), PhD (ed_PhD)
 
