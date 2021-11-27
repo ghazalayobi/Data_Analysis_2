@@ -1,10 +1,9 @@
 ---
 title: "Data Analysis: Assignment: 1"
 author: "Ghazal and Shah Ali"
-output:
-  prettydoc::html_pretty:
-    theme: architect
-    highlight: github
+output: 
+  pdf_document:
+    extra_dependencies: ["flafter"]
 ---
 
 
@@ -35,6 +34,8 @@ data_all <- read_csv(paste0("/Users/ghazalayobi/Downloads/morg-2014-emp.csv"),
                                       state = "c"))
 ```
 
+
+
 ```{r warning=FALSE, include=FALSE}
 # Filters and Data Transformations
 
@@ -59,7 +60,7 @@ data$gender <- as.character(data$gender)
 ```{r echo=FALSE, fig.align = 'left'}
 
 # Observations
-data[, .N, by = data$gender] %>% kbl(caption = "Table : 1")  %>% kable_classic(full_width=F)
+data[, .N, by = data$gender] %>% kbl()  %>% kable_classic(full_width=F)
 ```
 
 
@@ -67,30 +68,15 @@ data[, .N, by = data$gender] %>% kbl(caption = "Table : 1")  %>% kable_classic(f
 # Summary
 
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
-datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data, title = "Table : 2", )
+datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data )
 
 
 ```
+
+
 
 ```{r include=FALSE}
 data <- data %>% filter(w >=1)
-```
-
-```{r echo=FALSE, fig.height=4, fig.width=4}
-
-figure1 <- ggplot(data = data, aes(x = w)) + 
-  geom_density(color = "#3a5e8cFF") + 
-  ggtitle("Figure : 1") + 
-  theme_light() +
-  labs(x = "Wage",y = "Density")
-
-figure2 <- ggplot(data = data, aes(x = lnw)) + 
-  geom_density(color = "#3a5e8cFF") + 
-  ggtitle("Figure : 2") + 
-  theme_light() +
-  labs(x = "Log of Wage",y = "Density")
-figure1
-figure2
 ```
 
 
@@ -103,13 +89,13 @@ reg2 <- lm(lnw~female,data)
 ```
 
 
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
 msummary(list("Wage (LM)" = reg1, "Log Wage (LM)" = reg2),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within',
-         stars=c('*' = .05, '**' = .01),
-         title = "Table : 3"
+         stars=c('*' = .05, '**' = .01)
 )
 
 ```
@@ -154,13 +140,14 @@ reg10 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + e
 
 ```
 
+
+
 ```{r echo=FALSE, warning=FALSE, message=FALSE}
 
 msummary(list(reg3, reg4, reg5),
          fmt="%.4f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
-         stars=c('*' = .05, '**' = .01),
-         title = "Table : 4"
+         stars=c('*' = .05, '**' = .01)
          )
 
 ```
@@ -168,7 +155,6 @@ msummary(list(reg3, reg4, reg5),
 
 ```{r warning=FALSE, include=FALSE}
 # Interaction between gender and education levels
-
 
 
 reg11 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==1), se_type = "HC1")
@@ -179,6 +165,8 @@ reg13 <- lm_robust(lnw ~ grade92 + female + female*ed_Associate_ap + female*ed_B
 
 
 ```
+
+
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -193,7 +181,8 @@ msummary(list("Women (log Wage)" = reg11, "Men (log Wage)" = reg12, "All (log Wa
 ```
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=4, fig.width=4}
+
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=3}
 ##############################
 # graphs
 ##############################
@@ -208,6 +197,18 @@ graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   ggtitle("Figure 1")
 graph1
 
+
+figure1 <- ggplot(data = data, aes(x = lnw)) + 
+  geom_density(color = "#3a5e8cFF") + 
+  ggtitle("Figure : 2") + 
+  theme_light() +
+  labs(x = "Log of Wage",y = "Density")
+figure1
+
+
+```
+
+```{r eval=FALSE, include=FALSE}
 graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
   geom_smooth(method="lm", color = "#10a53dFF", formual = 'y ~ x') +
@@ -218,9 +219,19 @@ graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   ggtitle("Figure 2")
 graph2
 
-
 ```
 
+
+```{r echo=FALSE, fig.height=4, fig.width=4}
+
+figure2 <- ggplot(data = data, aes(x = w)) + 
+  geom_density(color = "#3a5e8cFF") + 
+  ggtitle("Figure : 1") + 
+  theme_light() +
+  labs(x = "Wage",y = "Density")
+
+
+```
 
 ```{r eval=FALSE, include=FALSE}
 
