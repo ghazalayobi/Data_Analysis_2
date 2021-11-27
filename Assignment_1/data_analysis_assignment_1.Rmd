@@ -1,9 +1,7 @@
 ---
 title: "Data Analysis: Assignment: 1"
 author: "Ghazal and Shah Ali"
-output: 
-  pdf_document:
-    extra_dependencies: ["flafter"]
+output: pdf_document
 ---
 
 
@@ -16,14 +14,13 @@ library(modelsummary)
 library(fixest)
 library(dplyr)
 library(kableExtra)
-library(huxtable)
 library(data.table)
 library(stargazer)
-library(haven)
 library(estimatr)
 library(boot)
 
 ```
+
 
 ```{r include=FALSE}
 # Importing data
@@ -36,7 +33,7 @@ data_all <- read_csv(paste0("/Users/ghazalayobi/Downloads/morg-2014-emp.csv"),
 
 
 
-```{r warning=FALSE, include=FALSE}
+```{r warning=FALSE, message = FALSE, include=FALSE}
 # Filters and Data Transformations
 
 data <- data_all %>% filter(occ2012==800)
@@ -57,14 +54,14 @@ data$gender <- as.character(data$gender)
 ```
 
 
-```{r echo=FALSE, fig.align = 'left'}
+```{r echo=FALSE, fig.align = 'left', warning=FALSE, message = FALSE}
 
 # Observations
 data[, .N, by = data$gender] %>% kbl()  %>% kable_classic(full_width=F)
 ```
 
 
-```{r echo=FALSE}
+```{r echo=FALSE, warning=FALSE, message = FALSE}
 # Summary
 
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
@@ -75,7 +72,7 @@ datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w
 
 
 
-```{r include=FALSE}
+```{r include=FALSE, warning=FALSE, message = FALSE}
 data <- data %>% filter(w >=1)
 ```
 
@@ -153,7 +150,7 @@ msummary(list(reg3, reg4, reg5),
 ```
 
 
-```{r warning=FALSE, include=FALSE}
+```{r warning=FALSE, include=FALSE, message=FALSE}
 # Interaction between gender and education levels
 
 
@@ -182,11 +179,7 @@ msummary(list("Women (log Wage)" = reg11, "Men (log Wage)" = reg12, "All (log Wa
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3, fig.width=3}
-##############################
-# graphs
-##############################
-
+```{r echo=FALSE, warning=FALSE, message = FALSE, fig.height=3, fig.width=3, fig.pos='h'}
 graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
   geom_smooth(method="loess", color = "#10a53dFF", formual = 'y ~ x') +
@@ -205,8 +198,9 @@ figure1 <- ggplot(data = data, aes(x = lnw)) +
   labs(x = "Log of Wage",y = "Density")
 figure1
 
-
 ```
+
+
 
 ```{r eval=FALSE, include=FALSE}
 graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
@@ -220,6 +214,9 @@ graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
 graph2
 
 ```
+
+
+
 
 
 ```{r echo=FALSE, fig.height=4, fig.width=4}
@@ -271,4 +268,6 @@ bstps
 
 
 ```
+
+
 
