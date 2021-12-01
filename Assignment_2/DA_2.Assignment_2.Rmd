@@ -1,0 +1,30 @@
+---
+title: "Data Analysis : Assignment 2"
+author: "Ghazal"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r}
+# CLEAR MEMORY
+rm(list=ls())
+
+
+# Import libraries
+library(tidyverse)
+library(xtable)
+library(haven)
+library(cowplot)
+library(lspline)
+library(data.table)
+library(mfx)
+library(margins)
+library(stargazer)
+library(psych)
+library(estimatr)
+library(huxtable)
+```
+
