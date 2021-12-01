@@ -54,12 +54,16 @@ data <- data %>% filter(price<=600) %>% filter(!is.na(stars))
 data<-data[!duplicated(data),]
 
 # Hotel rating is not null
-data <- data[!is.na(data$rating), ]
+data <- data[!is.na(data$rating), ] 
+data <- data[!is.na(data$stars), ] 
+data <- data[!is.na(data$distance), ]
 
 # LOG transformation of Price
 data$lnprice <- log(data$price)
 
-data$highly_rate <- ifelse(data$rated>=4, 1, 0)
+data$highly_rated <- ifelse(data$rating<=4, 1, 0)
+data$high_stars <- ifelse(data$stars<=3, 1, 0)
+data$distance2 <- ifelse(data$distance<=2, 1, 0)
 ```
 
 - Filtered the data for **Paris**
@@ -67,22 +71,23 @@ data$highly_rate <- ifelse(data$rated>=4, 1, 0)
 - Price is less than _*600*_
 - Removed null values from _stars_
 - Removed duplicates
-- Removed Null values from _rating_
+- Removed Null values from _rating_, _stars_, and _distance_
 - Created log of price, _lnprice_
 - Created _highly_rated_ if rating >= 4
 
-```{r}
-
-```
 
 
 ```{r}
 # 2) Quick reminder: check the descriptives + association
 # Summary statistics on price and log of price
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
-datasummary( price + lnprice + distance + stars + rating ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
+datasummary( highly_rated + distance2 + high_stars ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
 
 
 ```
 
+```{r}
+
+
+```
 
