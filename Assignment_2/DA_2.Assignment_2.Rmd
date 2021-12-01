@@ -15,16 +15,74 @@ rm(list=ls())
 
 # Import libraries
 library(tidyverse)
-library(xtable)
 library(haven)
-library(cowplot)
-library(lspline)
 library(data.table)
-library(mfx)
-library(margins)
-library(stargazer)
-library(psych)
-library(estimatr)
+library(rms)
+library(lspline)
 library(huxtable)
+library(modelsummary)
 ```
+
+```{r}
+# Loading the data
+# Get the dataset: now we use all the observations from Europe:
+
+hotels_europe_price <- read_csv("https://osf.io/p6tyr/download")
+hotels_europe_features <- read_csv("https://osf.io/utwjs/download")
+```
+
+```{r}
+# Joining Price and Features
+
+# Join them by hotel_id
+data <- left_join(hotels_europe_price, hotels_europe_features, by = "hotel_id")
+rm(hotels_europe_price,hotels_europe_features)
+```
+
+
+```{r}
+# Selecting a City
+###### ? should to pick city or city actual
+data <- data %>% filter(city_actual=="Paris")
+
+#unique(data$accommodation_type)
+data <- data <- data[data$accommodation_type=="Hotel",]
+# For accommodation type we selected Hotel and Apartment 
+
+data <- data %>% filter(price<=600) %>% filter(!is.na(stars))
+# check for duplicates
+data<-data[!duplicated(data),]
+
+# Hotel rating is not null
+data <- data[!is.na(data$rating), ]
+
+# LOG transformation of Price
+data$lnprice <- log(data$price)
+
+data$highly_rate <- ifelse(data$rated>=4, 1, 0)
+```
+
+- Filtered the data for **Paris**
+- Selected Hotels and Apartments for accommodation type
+- Price is less than _*600*_
+- Removed null values from _stars_
+- Removed duplicates
+- Removed Null values from _rating_
+- Created log of price, _lnprice_
+- Created _highly_rated_ if rating >= 4
+
+```{r}
+
+```
+
+
+```{r}
+# 2) Quick reminder: check the descriptives + association
+# Summary statistics on price and log of price
+P95 <- function(x){ quantile(x,.95,na.rm=T)}
+datasummary( price + lnprice + distance + stars + rating ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
+
+
+```
+
 
