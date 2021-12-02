@@ -164,17 +164,17 @@ msummary(list(lpm, logit, probit),
 
 ```{r echo=FALSE}
 g5 <- ggplot(data = data) +
-  geom_point(aes(x=pred_lpm, y=pred_probit, color="Probit"), size=0.4,  shape=16) +
-  geom_point(aes(x=pred_lpm, y=pred_logit,  color="Logit"), size=0.4,  shape=16) +
-  geom_line(aes(x=pred_lpm, y=pred_lpm,    color="45 Degree line"), size=0.4) +
-  labs(x = "Predicted probability of staying healthy (LPM)", y="Predicted probability")+
-  #scale_y_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.1)) +
-  #scale_x_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.1)) +
+  geom_point(aes(x=pred_lpm, y=pred_probit, color="Probit"), size=0.5,  shape=16) +
+  geom_point(aes(x=pred_lpm, y=pred_logit,  color="Logit"), size=0.5,  shape=16) +
+  geom_line(aes(x=pred_lpm, y=pred_lpm,    color="45 Degree line"), size=0.5) +
+  labs(x = "Predicted probability of Highly Rated (LPM)", y="Predicted probability")+
+  scale_y_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
+  scale_x_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
   scale_color_manual(name = "", values=c("#541352FF", "#3a5e8cFF","#10a53dFF")) +
   theme_light()+
   theme(legend.position=c(0.55,0.08),
         legend.direction = "horizontal",
-        legend.text = element_text(size = 4))
+        legend.text = element_text(size = 7))
 g5
 ```
 
@@ -183,7 +183,7 @@ g5
 g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
   geom_smooth(method="loess", color="3a5e8cFF") +
   scale_y_continuous(expand = c(0.01,0.01),limits = c(0,1), breaks = seq(0,1,0.2), labels = scales::percent) +
-  labs(x = "distance",y = "Probability of highlyrated") +
+  labs(x = "Distance",y = "Probability of Highly Rated") +
   theme_light() 
 g1
 ```
@@ -194,7 +194,7 @@ g1
 g1 <- ggplot(data = data, aes(x=stars, y=highly_rated)) +
   geom_smooth(method="loess", color="3a5e8cFF") +
   scale_y_continuous(expand = c(0.01,0.01),limits = c(0,1), breaks = seq(0,1,0.2), labels = scales::percent) +
-  labs(x = "stars",y = "Probability of highlyrated") +
+  labs(x = "Stars",y = "Probability of Highly Rated") +
   theme_light() 
 g1
 
