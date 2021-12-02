@@ -61,10 +61,13 @@ data <- data[!is.na(data$distance), ]
 # LOG transformation of Price
 data$lnprice <- log(data$price)
 
+
+
 data$highly_rated <- ifelse(data$rating<=4, 1, 0)
 data$high_stars <- ifelse(data$stars<=3, 1, 0)
 data$distance2 <- ifelse(data$distance<=2, 1, 0)
 ```
+
 
 - Filtered the data for **Paris**
 - Selected Hotels and Apartments for accommodation type
@@ -87,7 +90,102 @@ datasummary( highly_rated + distance2 + high_stars ~ Mean + SD + Min + Max + Med
 ```
 
 ```{r}
+lpm1 <- lm(highly_rated ~ high_stars + distance2, data=data)
+summary(lpm1, vcov=sandwich)
+
+```
 
 
+```{r}
+# lpm versus logit and probit
+# with all right-hand-side variables
+
+#prep
+library(pscl)
+library(modelsummary)
+
+
+# lpm (repeating the previous regression)
+lpm <-lm(highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data)
+summary(lpm, vcov=sandwich)
+
+
+```
+
+```{r}
+# logit coefficients
+library(lspline)
+data <- as.matrix(data)
+logit <- glm(highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data, family='binomial')
+summary(logit)
+glance(logit)
+#TODO
+# consider change to margins package
+
+
+# predicted probabilities 
+data$pred_logit <- predict.glm(logit, type="response")
+summary(data$pred_logit)
+
+
+# logit marginal differences
+logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data, atmean=FALSE)
+print(logit)
+
+# Or calculate manually
+data$stars03 <- ifelse(data$stars <= 3, data$stars, 3)
+
+data$stars04 <- ifelse(data$stars<=4, 0, data$stars-4)
+
+
+logit2 <- glm(formula = highly_rated ~ stars03 + stars03 + distance2 + lnprice, data=data, family='binomial')
+
+logit_marg2 <- margins(logit2)
+summary(logit_marg2)
+```
+
+
+```{r}
+
+# probit coefficients
+probit <- glm(highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data, family=binomial(link="probit"))
+summary(probit)
+
+# predicted probabilities 
+data$pred_probit<- predict.glm(probit, type="response") 
+summary(data$pred_probit)
+
+# probit marginal differences
+probit_marg <- probitmfx(formula = highly_rated ~ stars03 + stars03 + distance2 + lnprice, data=data, atmean=FALSE)
+print(probit_marg)
+```
+
+
+
+```{r}
+cm <- c('(Intercept)' = 'Constant')
+msummary(list(lpm, logit, logit_marg, probit, probit_marg),
+         fmt="%.3f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2|PseudoR2',
+         stars=c('*' = .05, '**' = .01),
+         coef_rename = cm,
+         coef_omit = 'as.factor(country)*'
+         #output = paste(output,"ch09_reg2-R.tex",sep="")
+)
+```
+
+
+```{r}
+# adding pseudo R2 (not work for mfx)
+glance_custom.glm <- function(x) data.frame(`PseudoR2` = pR2(x)["McFadden"])
+cm <- c('(Intercept)' = 'Constant')
+msummary(list(lpm, logit, probit),
+         fmt="%.3f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
+         stars=c('*' = .05, '**' = .01),
+         coef_rename = cm,
+         coef_omit = 'as.factor(country)*'
+         #output = paste(output,"ch09_reg2-R.tex",sep="")
+)
 ```
 
