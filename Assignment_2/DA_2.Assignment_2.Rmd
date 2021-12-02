@@ -56,7 +56,7 @@ data$lnprice <- log(data$price)
 
 
 data$highly_rated <- ifelse(data$rating>=4, 1, 0)
-#data$distance2 <- ifelse(data$distance<=2, 1, 0)
+data$distance2 <- ifelse(data$distance<=2, 1, 0)
 
 # check for duplicates
 #data<-data[!duplicated(data),]
@@ -79,7 +79,7 @@ data$highly_rated <- ifelse(data$rating>=4, 1, 0)
 # 2) Quick reminder: check the descriptives + association
 # Summary statistics on price and log of price
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
-datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
+datasummary( highly_rated + distance2 + stars ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
 
 
 ```
@@ -88,7 +88,7 @@ datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + 
 ```{r include=FALSE}
 
 # lpm (repeating the previous regression)
-lpm <-lm(highly_rated ~ lspline(stars, c(3)) + distance, data=data)
+lpm <-lm(highly_rated ~ lspline(stars, c(4)) + distance2, data=data)
 summary(lpm, vcov=sandwich)
 
 data$pred_lpm <- predict(lpm)
@@ -100,7 +100,7 @@ summary(data$pred_lpm)
 # logit coefficients
 library(lspline)
 
-logit <- glm(highly_rated ~ lspline(stars, c(3)) + distance, data=data, family='binomial')
+logit <- glm(highly_rated ~ lspline(stars, c(4)) + distance2, data=data, family='binomial')
 summary(logit)
 glance(logit)
 #TODO
@@ -114,7 +114,7 @@ summary(data$pred_logit)
 
 # logit marginal differences
 library(mfx)
-logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance, data=data, atmean=FALSE)
+logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(4)) + distance2, data=data, atmean=FALSE)
 
 ```
 
@@ -122,7 +122,7 @@ logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance,
 ```{r include=FALSE}
 
 # probit coefficients
-probit <- glm(highly_rated ~ lspline(stars, c(3)) + distance, data=data, family=binomial(link="probit"))
+probit <- glm(highly_rated ~ lspline(stars, c(4)) + distance2, data=data, family=binomial(link="probit"))
 
 
 # predicted probabilities 
@@ -130,7 +130,7 @@ data$pred_probit<- predict.glm(probit, type="response")
 summary(data$pred_probit)
 
 # probit marginal differences
-probit_marg <- probitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance, data=data, atmean=FALSE)
+probit_marg <- probitmfx(formula = highly_rated ~ lspline(stars, c(4)) + distance2, data=data, atmean=FALSE)
 
 ```
 
