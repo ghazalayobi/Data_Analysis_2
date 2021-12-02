@@ -4,11 +4,8 @@ author: "Ghazal"
 output: pdf_document
 ---
 
-```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE)
-```
 
-```{r}
+```{r include=FALSE}
 # CLEAR MEMORY
 rm(list=ls())
 
@@ -21,9 +18,12 @@ library(rms)
 library(lspline)
 library(huxtable)
 library(modelsummary)
+library(pscl)
+
+
 ```
 
-```{r}
+```{r include=FALSE}
 # Loading the data
 # Get the dataset: now we use all the observations from Europe:
 
@@ -31,7 +31,7 @@ hotels_europe_price <- read_csv("https://osf.io/p6tyr/download")
 hotels_europe_features <- read_csv("https://osf.io/utwjs/download")
 ```
 
-```{r}
+```{r include=FALSE}
 # Joining Price and Features
 
 # Join them by hotel_id
@@ -40,7 +40,7 @@ rm(hotels_europe_price,hotels_europe_features)
 ```
 
 
-```{r}
+```{r include=FALSE}
 # Selecting a City
 ###### ? should to pick city or city actual
 data <- data %>% filter(city_actual=="Paris")
@@ -59,12 +59,10 @@ data <- data[!is.na(data$stars), ]
 data <- data[!is.na(data$distance), ]
 
 # LOG transformation of Price
-data$lnprice <- log(data$price)
-
+#data$lnprice <- log(data$price)
 
 
 data$highly_rated <- ifelse(data$rating<=4, 1, 0)
-data$high_stars <- ifelse(data$stars<=3, 1, 0)
 data$distance2 <- ifelse(data$distance<=2, 1, 0)
 ```
 
@@ -77,46 +75,36 @@ data$distance2 <- ifelse(data$distance<=2, 1, 0)
 - Removed Null values from _rating_, _stars_, and _distance_
 - Created log of price, _lnprice_
 - Created _highly_rated_ if rating >= 4
+- Distance is with in 2 miles
 
 
 
-```{r}
+```{r echo=FALSE}
 # 2) Quick reminder: check the descriptives + association
 # Summary statistics on price and log of price
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
-datasummary( highly_rated + distance2 + high_stars ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
+datasummary( highly_rated + distance2 + stars ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
 
 
 ```
 
-```{r}
-lpm1 <- lm(highly_rated ~ high_stars + distance2, data=data)
-summary(lpm1, vcov=sandwich)
 
-```
-
-
-```{r}
-# lpm versus logit and probit
-# with all right-hand-side variables
-
-#prep
-library(pscl)
-library(modelsummary)
-
+```{r include=FALSE}
 
 # lpm (repeating the previous regression)
-lpm <-lm(highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data)
+lpm <-lm(highly_rated ~ lspline(stars, c(3)) + distance2, data=data)
 summary(lpm, vcov=sandwich)
 
+data$pred_lpm <- predict(lpm)
+summary(data$pred_lpm)
 
 ```
 
-```{r}
+```{r include=FALSE}
 # logit coefficients
 library(lspline)
-data <- as.matrix(data)
-logit <- glm(highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data, family='binomial')
+
+logit <- glm(highly_rated ~ lspline(stars, c(3)) + distance2, data=data, family='binomial')
 summary(logit)
 glance(logit)
 #TODO
@@ -129,40 +117,30 @@ summary(data$pred_logit)
 
 
 # logit marginal differences
-logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data, atmean=FALSE)
-print(logit)
+library(mfx)
+logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance2, data=data, atmean=FALSE)
 
-# Or calculate manually
-data$stars03 <- ifelse(data$stars <= 3, data$stars, 3)
-
-data$stars04 <- ifelse(data$stars<=4, 0, data$stars-4)
-
-
-logit2 <- glm(formula = highly_rated ~ stars03 + stars03 + distance2 + lnprice, data=data, family='binomial')
-
-logit_marg2 <- margins(logit2)
-summary(logit_marg2)
 ```
 
 
-```{r}
+```{r include=FALSE}
 
 # probit coefficients
-probit <- glm(highly_rated ~ lspline(stars, c(3,4)) + distance2 + lnprice, data=data, family=binomial(link="probit"))
-summary(probit)
+probit <- glm(highly_rated ~ lspline(stars, c(3)) + distance2, data=data, family=binomial(link="probit"))
+
 
 # predicted probabilities 
 data$pred_probit<- predict.glm(probit, type="response") 
 summary(data$pred_probit)
 
 # probit marginal differences
-probit_marg <- probitmfx(formula = highly_rated ~ stars03 + stars03 + distance2 + lnprice, data=data, atmean=FALSE)
-print(probit_marg)
+probit_marg <- probitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance2, data=data, atmean=FALSE)
+
 ```
 
 
 
-```{r}
+```{r echo=FALSE}
 cm <- c('(Intercept)' = 'Constant')
 msummary(list(lpm, logit, logit_marg, probit, probit_marg),
          fmt="%.3f",
@@ -170,12 +148,12 @@ msummary(list(lpm, logit, logit_marg, probit, probit_marg),
          stars=c('*' = .05, '**' = .01),
          coef_rename = cm,
          coef_omit = 'as.factor(country)*'
-         #output = paste(output,"ch09_reg2-R.tex",sep="")
+         
 )
 ```
 
 
-```{r}
+```{r echo=FALSE}
 # adding pseudo R2 (not work for mfx)
 glance_custom.glm <- function(x) data.frame(`PseudoR2` = pR2(x)["McFadden"])
 cm <- c('(Intercept)' = 'Constant')
@@ -183,9 +161,53 @@ msummary(list(lpm, logit, probit),
          fmt="%.3f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
          stars=c('*' = .05, '**' = .01),
-         coef_rename = cm,
-         coef_omit = 'as.factor(country)*'
-         #output = paste(output,"ch09_reg2-R.tex",sep="")
+         coef_rename = cm
 )
+```
+
+
+```{r echo=FALSE}
+g5 <- ggplot(data = data) +
+  geom_point(aes(x=pred_lpm, y=pred_probit, color="Probit"), size=0.4,  shape=16) +
+  geom_point(aes(x=pred_lpm, y=pred_logit,  color="Logit"), size=0.4,  shape=16) +
+  geom_line(aes(x=pred_lpm, y=pred_lpm,    color="45 Degree line"), size=0.4) +
+  labs(x = "Predicted probability of staying healthy (LPM)", y="Predicted probability")+
+  #scale_y_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.1)) +
+  #scale_x_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.1)) +
+  scale_color_manual(name = "", values=c("#541352FF", "#3a5e8cFF","#10a53dFF")) +
+  theme_light()+
+  theme(legend.position=c(0.55,0.08),
+        legend.direction = "horizontal",
+        legend.text = element_text(size = 4))
+g5
+```
+
+```{r eval=FALSE, include=FALSE}
+
+# stars
+share<-share %>%
+  group_by(eduyears, stayshealthy) %>%
+  mutate(weight = n()/100)
+  
+g2a<-ggplot(data = share, aes(x=eduyears, y=stayshealthy)) +
+#  geom_point(aes(x = eduyears, y = stayshealthy, size=weight), color=color[1], shape = 16, alpha=0.8, show.legend=F, na.rm=TRUE)  +
+  geom_smooth_da(method="loess", color=color[1]) +
+  scale_x_continuous(expand = c(0.01,0.01), limits = c(0,25), breaks = seq(0,25,4))+
+  scale_y_continuous(expand = c(0.01,0.01), limits = c(0,1), breaks = seq(0,1,0.1)) +
+  labs(x = "Years of education",y = "Probability of staying healthy ") +
+  #labs(x = "Education (years of schooling)",y = "Probability of staying healthy ") +
+  theme_bg() 
+g2a
+```
+
+```{r eval=FALSE, include=FALSE}
+
+distance
+g2c<-ggplot(data = share, aes(x=age, y=stayshealthy)) +
+  geom_smooth_da(method="loess", color=color[1]) +
+  scale_y_continuous(expand = c(0.01,0.01),limits = c(0,1), breaks = seq(0,1,0.2), labels = scales::percent) +
+  labs(x = "Age at interview (years)",y = "Probability of staying healthy") +
+  theme_bg() 
+g2c
 ```
 
