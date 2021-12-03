@@ -64,9 +64,12 @@ data$highly_rated <- ifelse(data$rating>=4, 1, 0)
 
 ## Introduction
 
-For this assignement we use Hotels-Europe data. This data set contains two tables **[Features](https://osf.io/utwjs/download)** and **[Price](https://osf.io/p6tyr/download)**. We joined the two tables using left join. For the further analysis, we selected _**Paris**_ City and considered _**Hotels**_ as accomodation type. 
+For this assignement we use Hotels-Europe data. This data set contains two tables **[Features](https://osf.io/utwjs/download)** and **[Price](https://osf.io/p6tyr/download)**. We joined the two tables using left join
 
 ## Data Transformation
+
+As a process for filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binarry variable,  highly_rated=1 if rating ≥ 4, 0 otherwise we selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. We considered hotels with less than _USD 600_ per night. 
+
 
 
 ```{r echo=FALSE}
