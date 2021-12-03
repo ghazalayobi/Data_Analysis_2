@@ -67,7 +67,7 @@ data$highly_rated <- ifelse(data$rating>=4, 1, 0)
 The Question of this case study is how hotels distance from center is related to highly rated hotels. For this assignment we use Hotels-Europe data. This data set contains two tables **[Features](https://osf.io/utwjs/download)** and **[Price](https://osf.io/p6tyr/download)**. We joined the two tables using left join. 
 
 ## Data Transformation
- 
+
 As a process for filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called highly_rated=1 if rating ≥ 4, 0 otherwise. We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night. Removed NULL and duplicated values from the data set. 
 
 ## Analysis
