@@ -1,9 +1,8 @@
 ---
 title: "Data Analysis : Assignment 2"
 author: "Ghazal Ayobi and Shah Ali Gardezi"
-output: pdf_document
+output: html_document
 ---
-
 
 ```{r include=FALSE}
 # CLEAR MEMORY
@@ -19,6 +18,7 @@ library(lspline)
 library(huxtable)
 library(modelsummary)
 library(pscl)
+library(tinytex)
 
 
 ```
@@ -68,12 +68,11 @@ The Question of this case study is how hotels distance from center is related to
 
 ## Data Transformation
 
-
 As a process for filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called highly_rated=1 if rating ≥ 4, 0 otherwise. We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night. Removed NULL and duplicated values from the data set. 
 
 ## Analysis
 
-In the first place in order to understand what functional form to include in the regression. e use dsitacne from city center and number pf stars relationship. To caputre nonliterary 
+In the first place in order to understand what functional form to include in the regression. We use distance from city center and number of stars relationship. To capture nonliterary 
 
 
 
