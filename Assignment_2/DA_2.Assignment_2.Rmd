@@ -18,7 +18,7 @@ library(lspline)
 library(huxtable)
 library(modelsummary)
 library(pscl)
-
+library(esquisse)
 
 ```
 
@@ -57,7 +57,6 @@ data$lnprice <- log(data$price)
 
 
 data$highly_rated <- ifelse(data$rating>=4, 1, 0)
-#data$distance2 <- ifelse(data$distance<=2, 1, 0)
 
 # check for duplicates
 #data<-data[!duplicated(data),]
@@ -65,16 +64,16 @@ data$highly_rated <- ifelse(data$rating>=4, 1, 0)
 
 ## Introduction
 
-The Question of this case study is how hotels distance from center is related to highly rated hotels. For this assignment we use Hotels-Europe data. This data set contains two tables **[Features](https://osf.io/utwjs/download)** and **[Price](https://osf.io/p6tyr/download)**. We joined the two tables using left join. 
+The Question of this case study is how hotels distance from center is related to highly rated hotels. For this assignment we use Hotels-Europe data. This data set contains two tables [Features](https://osf.io/utwjs/download) and [Price](https://osf.io/p6tyr/download). We joined the two tables using left join. 
+
 
 ## Data Transformation
 
-As a process for filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called highly_rated=1 if rating ≥ 4, 0 otherwise. We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night. Removed NULL and duplicated values from the data set. 
+As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than _4_, _0_ otherwise.  We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD600_ per night, removed null and duplicated values from the data set. 
 
 ## Analysis
 
-In the first place in order to understand what functional form to include in the regression. We use distance from city center and number of stars relationship. To capture nonliterary 
-
+In the first place in order to understand what functional form to include in the regression. We examined lowess regression with highly rated hotels to decide in what functional form to include stars and distance. The figures in the appendix shows that distance and highly rated hotels have negative relationship. distance increases by one mile and. between 1.2 miles and 3 miles highly rated hotels and distance does not indicate in correlation. after 3 miles, highly rated declines. as the graph indicates after 3 stars the relationship between highly rated and stars changes. Price and highly rated has interesting relationship one unit change in price till USD 250 has positive relationship, after it declines.  
 
 
 
@@ -103,7 +102,7 @@ datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + 
 ```{r include=FALSE}
 
 # lpm (repeating the previous regression)
-lpm <-lm(highly_rated ~ lspline(stars, c(4)) + distance, data=data)
+lpm <-lm(highly_rated ~ lspline(stars, c(3)) + distance, data=data)
 summary(lpm, vcov=sandwich)
 
 data$pred_lpm <- predict(lpm)
@@ -115,7 +114,7 @@ summary(data$pred_lpm)
 # logit coefficients
 library(lspline)
 
-logit <- glm(highly_rated ~ lspline(stars, c(4)) + distance, data=data, family='binomial')
+logit <- glm(highly_rated ~ lspline(stars, c(3)) + distance, data=data, family='binomial')
 summary(logit)
 glance(logit)
 
@@ -129,7 +128,7 @@ summary(data$pred_logit)
 
 # logit marginal differences
 library(mfx)
-logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(4)) + distance, data=data, atmean=FALSE)
+logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance, data=data, atmean=FALSE)
 
 ```
 
@@ -137,7 +136,7 @@ logit_marg <- logitmfx(formula = highly_rated ~ lspline(stars, c(4)) + distance,
 ```{r include=FALSE}
 
 # probit coefficients
-probit <- glm(highly_rated ~ lspline(stars, c(4)) + distance, data=data, family=binomial(link="probit"))
+probit <- glm(highly_rated ~ lspline(stars, c(3)) + distance, data=data, family=binomial(link="probit"))
 
 
 # predicted probabilities 
@@ -145,7 +144,7 @@ data$pred_probit<- predict.glm(probit, type="response")
 summary(data$pred_probit)
 
 # probit marginal differences
-probit_marg <- probitmfx(formula = highly_rated ~ lspline(stars, c(4)) + distance, data=data, atmean=FALSE)
+probit_marg <- probitmfx(formula = highly_rated ~ lspline(stars, c(3)) + distance, data=data, atmean=FALSE)
 
 ```
 
@@ -183,11 +182,11 @@ g5 <- ggplot(data = data) +
   geom_point(aes(x=pred_lpm, y=pred_logit,  color="Logit"), size=0.5,  shape=16) +
   geom_line(aes(x=pred_lpm, y=pred_lpm,    color="45 Degree line"), size=0.5) +
   labs(x = "Predicted probability of Highly Rated (LPM)", y="Predicted probability")+
-  scale_y_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
-  scale_x_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
+  #scale_y_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
+  #scale_x_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
   scale_color_manual(name = "", values=c("#541352FF", "#3a5e8cFF","#10a53dFF")) +
-  theme_light()+
-  theme(legend.position=c(0.55,0.08),
+  theme_light() +
+theme(legend.position=c(0.55,0.08),
         legend.direction = "horizontal",
         legend.text = element_text(size = 7))
 g5
@@ -216,6 +215,14 @@ g1
 ```
 
 
+```{r}
+g1 <- ggplot(data = data, aes(x=price, y=highly_rated)) +
+  geom_smooth(method="loess", color="3a5e8cFF") +
+  scale_y_continuous(expand = c(0.01,0.01),limits = c(0,1), breaks = seq(0,1,0.2), labels = scales::percent) +
+  labs(x = "price",y = "Probability of Highly Rated") +
+  theme_light() 
+g1
+```
 
 
 
