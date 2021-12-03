@@ -1,10 +1,10 @@
 ---
 title: "Data Analysis: Assignment: 1"
 author: "Ghazal and Shah Ali"
-output:
-  prettydoc::html_pretty:
-    theme: cayman
-    highlight: github
+output: 
+prettydoc::html_pretty:
+  theme: cayman
+highlight: github
 ---
 
 
@@ -23,9 +23,9 @@ library(modelsummary)
 
 ```
 
-```{r}
+```{r include=FALSE}
 
-data_all <- read_csv(paste0("/Users/ghazalayobi/Downloads/morg-2014-emp.csv"), 
+data_all <- read_csv(paste0("/Users/shahali/Documents/fall_semester/DA2/da_2_ghazal/morg-2014-emp.csv"), 
                      col_types = cols(.default = "?", 
                                       state = "c"))
 ```
