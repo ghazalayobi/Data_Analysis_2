@@ -18,10 +18,11 @@ library(lspline)
 library(huxtable)
 library(modelsummary)
 library(pscl)
-library(tinytex)
 
 
 ```
+
+
 
 ```{r include=FALSE}
 # Loading the data
@@ -78,8 +79,9 @@ In the first place in order to understand what functional form to include in the
 
 
 ```{r echo=FALSE}
-# 2) Quick reminder: check the descriptives + association
+
 # Summary statistics on price and log of price
+
 P95 <- function(x){ quantile(x,.95,na.rm=T)}
 datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + P95 + N , data = data )
 
@@ -116,7 +118,7 @@ library(lspline)
 logit <- glm(highly_rated ~ lspline(stars, c(4)) + distance, data=data, family='binomial')
 summary(logit)
 glance(logit)
-#TODO
+
 # consider change to margins package
 
 
@@ -191,7 +193,7 @@ g5 <- ggplot(data = data) +
 g5
 ```
 
-```{r}
+```{r echo=FALSE}
 #distance
 g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
   geom_smooth(method="loess", color="3a5e8cFF") +
@@ -201,7 +203,7 @@ g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
 g1
 ```
 
-```{r}
+```{r echo=FALSE}
 #stars
 
 g1 <- ggplot(data = data, aes(x=stars, y=highly_rated)) +
