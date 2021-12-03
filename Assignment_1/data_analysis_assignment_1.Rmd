@@ -1,134 +1,260 @@
 ---
-title: "Data Analysis: Assignment: 1"
-author: "Ghazal and Shah Ali"
-output: 
-prettydoc::html_pretty:
-  theme: cayman
-highlight: github
+output: pdf_document
 ---
-
 
 ```{r include=FALSE}
 # Libraries
 rm(list=ls())
 
 library(tidyverse)
-library(lspline)
-library(cowplot)
-library(boot)
-library(estimatr)
-library(huxtable)
-library(stargazer)
 library(modelsummary)
+library(fixest)
+library(dplyr)
+library(kableExtra)
+library(data.table)
+library(stargazer)
+library(estimatr)
+library(boot)
+library(ggplot2)
 
 ```
+
+
 
 ```{r include=FALSE}
+# Importing data
+data_all <- read_csv("https://osf.io/4ay9x/download")
 
-data_all <- read_csv(paste0("/Users/shahali/Documents/fall_semester/DA2/da_2_ghazal/morg-2014-emp.csv"), 
-                     col_types = cols(.default = "?", 
-                                      state = "c"))
 ```
 
-```{r echo=TRUE, warning=FALSE}
 
-data <- data_all %>% filter(occ2012==0136)
+```{r warning=FALSE, message = FALSE, include=FALSE}
+# Filters and Data Transformations
 
-data <- data %>% mutate(female=as.numeric(sex==2)) %>%
+data <- data_all %>% filter(occ2012==800)
+data <-  data.table(data)
+
+data <- data %>% mutate(female=as.numeric(sex==2)) %>% 
   mutate(w=earnwke/uhours) %>%
-  mutate(lnw=log(w)) %>%
-  mutate(grade92sq=grade92^2)
+  mutate(lnw=log(w))
 
-data %>% dplyr::select(earnwke,uhours,w) %>% summary()
+data <- data %>% filter(grade92 >= 41)
 
-data %>% filter(w>=1) %>% dplyr::select(earnwke,uhours,w) %>% summary()
+data$gender <- as.numeric(data$sex)
+data$gender[data$gender==1] <- "Male"
+data$gender[data$gender==2] <- "Female"
+data$gender <- as.character(data$gender)
 
-tabulate(data$female)
-table(data$occ2012,data$female)
+
+```
+## Data Analysis: Assignment: 1
+## Ghazal Ayobi and Shah Ali Gardezi
+
+## Introduction
+For this assignment we use Current Population Survey (CPS) which can be accessed [**here**.](https://osf.io/4ay9x/) The occupation that we have selected for this exercise is the _**Accountants and Auditor**_, with census occupation code _**0800**_.
+
+## Data Transformation
+As a process of filtering and transforming as we created new variables such as _**female**_ which is assigned a binary value of _**1**_, hourly wage_**(w)**_ which is calculated by dividing the weekly earnings (earnwke) by the number of hours (uhours), and log of wage _**(lnw)**_. We also created a character variable called _**gender**_ and using sex variable for MALE and FEMALE. Our sample is varied with high number of females (992) compared to men (573) as shown in Table 1.
+Descriptive summary of the main variables in our dataset can be found Table 2. From the table we infer that because of the presence of high hourly wage _**(w)**_ values like USD 346 per hour, mean tends to be to the right of the median thus making the sample distribution rightly skewed. Similarly, we see that there are certain people who work more than 40 hours (maximum value of 92 hours a week) which is also the cause for skewness. Moreover, there is also the presence of extreme values. For example, the minimum wage value is computed out to be USD 0.01 which is highly unlikely in USA thus we excluded  the data points for wage value below USD 1. 
+
+## Analysis
+
+Before we began our regression, we visualized the wage distribution using ggplot and found that the hourly wage (w) is rightly skewed. Thus, we will be using log of wage _**ln(w)**_ for our regression analysis. The distribution curve for ln(w) is shown in Figure 2. We now begin regression analysis in order to find out whether there exists a wage gap based on gender. Table 3 summarizes the results of regression for unconditional gender gap. There are two regressions, the first regression is level-level regression which shows that females on average tend to earn USD 5.5 less than their male counterparts. This wage gap is significant at 1% significant level. The second regression is log-level regression which show that females on average earn 18% less than males and this coefficient is significant with more than 99.9% confidence level.
+
+Our next aim is to find out wage gap based on different levels of education (description of different education level are shown in the Appendix). Table 4 summarizes the result of the multivariate regressions. To start off the model 2 of Table 4 we conditioned gender gap on education and found that females on average earn 14.7 % less than males and this coefficient is significant at 1% significant level. We then proceeded to uncover the wage disparity, based on different levels of education.  Model 3, shows the results of comparing employees of same gender with different education levels, using Associate-vocational degree as the baseline variable. We select values with more than 99 % confidence level, for example in the same gender employees with Bachelor degree tend to earn on average 33.3% more than employees with Associate- vocational degree.
+
+To gain a deeper understanding, we now run a regression with interaction terms using the same base variable. In the Table 5, the ALL regression column reveals, that even for women with higher education level, there exists a gender gap with 99% confidence level. For example, women with a Masters degree earns on an average 37.8 % less than males with Masters degree. 
+In order to summarize the findings, we see that with same level of education women earn less than men. We further confirm this by performing bootstrap simulations for 1000 times and the result continued to be similar
+
+
+
+```{r echo=FALSE, warning=FALSE, message = FALSE}
+
+# Observations
+data[, .N, by = data$gender] %>% kbl(caption = "")  %>% kable_classic(full_width=F)
+```
+
+
+```{r echo=FALSE, warning=FALSE, message = FALSE}
+# Summary
+
+P95 <- function(x){ quantile(x,.95,na.rm=T)}
+datasummary((`Weekly earnings` = earnwke) + (`Weekly hours worked` = uhours) + w + lnw ~ Mean + SD + Min + Max + Median + P95 + N, data = data, title = "" )
 
 
 ```
 
-```{r echo=TRUE, warning=FALSE}
-reg1<-lm(lnw~female,data) 
-summary(reg1)
 
-reg2 <- lm_robust(lnw ~ female, data = data, se_type = "HC1")
-summary(reg2)
 
-msummary(list(reg1, reg2),
+```{r include=FALSE, warning=FALSE, message = FALSE}
+data <- data %>% filter(w >=1)
+```
+
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+reg1 <- lm(w~female, data)
+reg2 <- lm(lnw~female,data) 
+
+
+```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+msummary(list("Wage (LM)" = reg1, "Log Wage (LM)" = reg2),
          fmt="%.4f",
-         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
-         stars=c('*' = .05, '**' = .01)
-)
-
-```
-
-```{r echo=TRUE, warning=FALSE}
-#Unconditional
-
-reg3 <- lm_robust(lnw ~ grade92, data = data, se_type = "HC1")
-reg3
-
-# 
-reg4 <- lm_robust(lnw ~ grade92+grade92sq, data = data, se_type = "HC1")
-reg4
-unique(data$grade92)
-# 39 - 46 grades
-reg5 <- lm_robust(lnw ~ lspline(grade92, c(42,46)), data = data, se_type = "HC1")
-reg5
-
-gm <-  c('R2' = 'R-squared (%)',
-         'se_type' = 'SE type')
-
-cm <- c('R2' = 'R-squared (%)',
-        'lspline(grade92, c(42, 46))2' = 'spline(grade92, c(38,41))',
-        '(Intercept)' = 'Constant')
-
-msummary(list(reg1, reg2, reg3, reg4, reg5),
-         fmt="%.3f",
-         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within',
          stars=c('*' = .05, '**' = .01),
-         coef_rename = cm,
-         #output = paste(output,"ch09_reg2-R.tex",sep="")
+         title = ""
 )
+
 ```
 
-```{r echo=TRUE, warning=FALSE}
-#lowess
-reg6 <- loess(lnw ~ grade92, data, control = loess.control(surface = "direct"))
-summary(reg6)
 
-loess(lnw ~ grade92, data)
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+
+
+data <- data %>% mutate(
+  ed_Associate_voc=as.numeric(grade92==41),
+  ed_Associate_ap=as.numeric(grade92==42),
+  ed_BA=as.numeric(grade92==43),
+  ed_MA=as.numeric(grade92==44),
+                      ed_Profess = as.numeric(grade92==45),
+                      ed_PhD = as.numeric(grade92==46))
+
+
+
+reg3 <- lm_robust(lnw ~ female, data=data, se_type = "HC1")
+
+reg4 <- lm_robust(lnw ~ female + grade92, data = data)
+# Base is ed_Associate_voc
+reg5 <- lm_robust(lnw ~ female + ed_Associate_ap +ed_BA + ed_MA + ed_Profess + ed_PhD, data = data, se_type = "HC1")
+
+
+# Base is ed_Associate_ap
+reg6 <- lm_robust(lnw ~ female + ed_Associate_voc +ed_BA + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+
+# Base is ed_BA
+reg7 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_MA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+
+# Base is ed_MA
+reg8 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_Profess + ed_PhD, data=data, se_type = "HC1")
+
+# Base is ed_Profess
+reg9 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_PhD, data=data, se_type = "HC1")
+
+# Base is ed_PhD
+reg10 <- lm_robust(lnw ~ female + ed_Associate_voc + ed_Associate_ap + ed_BA + ed_MA + ed_Profess, data=data, se_type = "HC1")
+
+
 ```
 
-```{r echo=TRUE, warning=FALSE}
-##############################
-# graphs
-##############################
 
+
+```{r echo=FALSE, warning=FALSE, message=FALSE}
+
+msummary(list(reg3, reg4, reg5),
+         fmt="%.4f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
+         stars=c('*' = .05, '**' = .01),
+         title = ""
+         )
+
+```
+
+
+```{r warning=FALSE, include=FALSE, message=FALSE}
+# Interaction between gender and education levels
+
+
+reg11 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data=data %>% filter(female==1), se_type = "HC1")
+
+reg12 <- lm_robust(lnw ~ grade92 + ed_Associate_ap + ed_BA + ed_MA + ed_Profess + ed_PhD, data = data %>% filter(female==0), se_type = "HC1")
+
+reg13 <- lm_robust(lnw ~ grade92 + female + female*ed_Associate_ap + female*ed_BA + female*ed_MA + female*ed_Profess + female*ed_PhD, data=data, se_type = "HC1")
+
+
+```
+
+
+
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+
+# problem
+
+msummary(list("Women (log Wage)" = reg11, "Men (log Wage)" = reg12, "All (log Wage)" = reg13),
+         fmt="%.4f",
+         gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2 Pseudo|R2 Within|Std.Errors',
+         stars=c('*' = .05, '**' = .01),
+         title = ""
+         )
+```
+
+
+```{r echo=FALSE, warning=FALSE, message = FALSE, fig.height=3.5, fig.width=3.5, fig.pos='h', fig.align='center'}
+
+# Non Parametric Regression shown by Loess
 graph1 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
-  geom_smooth(method="loess", color = "#10a53dFF") +
-  scale_x_continuous(expand=c(0.01, 0.01), limits = c(37, 47),   breaks=seq(37, 47,   by=1)) + 
+  geom_smooth(method="loess", color = "#10a53dFF", formual = 'y ~ x') +
+  scale_x_continuous(expand=c(0.01, 0.01), limits = c(40.5, 46.5),   breaks=seq(40, 47,   by=1)) + 
   scale_y_continuous(expand=c(0.01, 0.01),limits = c(1.5, 4.5), breaks=seq(1.5, 4.5, by=0.50)) +
-  labs(x = "grade92 (years)",y = "ln(earnings per hour)")+
-  theme_light() 
+  labs(x = "Grade92 (Education Levels)",y = "ln(earnings per hour)")+
+  theme_light() +
+  ggtitle("Figure 1")
 graph1
 
 
+
+
+```
+
+```{r echo=FALSE, warning=FALSE, message = FALSE, fig.height=3.5, fig.width=3.5, fig.pos='h', fig.align='center'}
+
+# Log of Wage density Distribution
+
+figure1 <- ggplot(data = data, aes(x = lnw)) + 
+  geom_density(color = "#3a5e8cFF") + 
+  ggtitle("Figure : 2") + 
+  theme_light() +
+  labs(x = "Log of Wage",y = "Density")
+figure1
+
+```
+
+
+```{r eval=FALSE, include=FALSE}
+
+# Parametric Regression shown by Linear Regression
 graph2 <- ggplot(data = data, aes(x = grade92, y = lnw)) +
   geom_point(color = "#3a5e8cFF") + 
-  geom_smooth(method="loess", color = "#10a53dFF") +
-  scale_x_continuous(expand=c(0.01, 0.01), limits = c(42, 47),   breaks=seq(37, 47,   by=1)) + 
+  geom_smooth(method="lm", color = "#10a53dFF", formual = 'y ~ x') +
+  scale_x_continuous(expand=c(0.01, 0.01), limits = c(40.5, 46.5),   breaks=seq(40, 47,   by=1)) + 
   scale_y_continuous(expand=c(0.01, 0.01),limits = c(1.5, 4.5), breaks=seq(1.5, 4.5, by=0.50)) +
-  labs(x = "grade92 (years)",y = "ln(earnings per hour)")+
-  theme_light() 
+  labs(x = "Grade92 (Education Levels)",y = "ln(earnings per hour)")+
+  theme_light() +
+  ggtitle("Figure 2")
 graph2
 
 ```
 
-```{r echo=TRUE}
+
+```{r eval=FALSE, fig.height=3.5, fig.width=3.5, include=FALSE}
+
+# Wage density Distribution
+figure2 <- ggplot(data = data, aes(x = w)) + 
+  geom_density(color = "#3a5e8cFF") + 
+  ggtitle("Figure : 1") + 
+  theme_light() +
+  labs(x = "Wage",y = "Density")
+figure2 
+
+```
+
+```{r eval=FALSE, include=FALSE}
 
 #####################################
 # bootstrap
@@ -155,16 +281,20 @@ bstps<- ggplot(data=b_earnings_female, aes(`_b_female`)) +
   geom_histogram(aes(y = (..count..)/sum(..count..)), binwidth = 0.025,  center=0.0125, closed="left", 
                  color = "#3a5e8cFF" , fill = "#3a5e8cFF",
                  size = 0.2, alpha = 0.8,  show.legend=F, na.rm=TRUE) +
-  geom_segment(aes(x = -0.21, y = 0, xend = -0.21, yend = 0.2), color = "#10a53dFF", size = 1)+
-  annotate("text", x = -0.18, y = 0.19, label = "mean", size=2.5) +
-  coord_cartesian(xlim = c(-0.4, 0), ylim = c(0, 0.2)) +
+  geom_segment(aes(x = -0.19, y = 0, xend = -0.19, yend = 0.35), color = "#10a53dFF", size = 1)+
+  annotate("text", x = -0.18, y = 0.35, label = "mean", size=2.5) +
+  coord_cartesian(xlim = c(-0.3, 0), ylim = c(0, 0.4)) +
   labs(x = "Slope coefficients from bootstrap samples",y = "Percent")+
-  scale_y_continuous(expand = c(0.0,0.0), limits = c(0,0.2), 
+  scale_y_continuous(expand = c(0.0,0.0), limits = c(0,0.5), 
                      labels = scales::percent_format(accuracy = 1)) +
   theme_light() 
 bstps
 
 
-
 ```
+
+## Appendix
+
+Degree names of grade92 education levels and their variables names used in our code were as follows;
+Associate- vocational (ed_Associate_voc), Associate-academic program(ed_Associate_ap), Bachelors(ed_BA), Masters(ed_MA), Professional(ed_Profess), PhD (ed_PhD)
 
