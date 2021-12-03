@@ -2,6 +2,8 @@
 title: "Data Analysis : Assignment 2"
 author: "Ghazal Ayobi and Shah Ali Gardezi"
 output: pdf_document
+editor_options: 
+  chunk_output_type: inline
 ---
 
 ```{r include=FALSE, message=FALSE, warning=FALSE}
@@ -59,26 +61,22 @@ data$lnprice <- log(data$price)
 
 
 data$highly_rated <- ifelse(data$rating>=4, 1, 0)
-data$high_stars <- ifelse(data$stars>=3, 1, 0)
+data$top_stars <- ifelse(data$stars>=3, 1, 0)
 
 # check for duplicates
-#data<-data[!duplicated(data),]
+data<-data[!duplicated(data),]
 ```
 
 ## Introduction
 
-The Question of this case study is how hotels distance from center is related to highly rated hotels. For this assignment we use Hotels-Europe data. This data set contains two tables [Features](https://osf.io/utwjs/download) and [Price](https://osf.io/p6tyr/download). We joined the two tables using left join. 
-
+The Question of this case study is how hotels stars is related to highly rated hotels. For this assignment we use Hotels-Europe data. This data set contains two tables [**Features**](https://osf.io/utwjs/download) and [**Price**](https://osf.io/p6tyr/download). We joined the two tables using left join. 
 
 ## Data Transformation
 
-As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than _4_, _0_ otherwise.  We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD600_ per night, removed null and duplicated values from the data set. 
+As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than _4_, _0_ otherwise.  We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night, and we removed null and duplicated values from the data set. 
+In order to understand what functional form to include in the regression we examined _Lowess_ regression with highly rated hotels and distance. _Figure 1_ in the appendix shows that distance and highly rated hotels have negative relationship from city center to 1.2 miles away from center, however _highly_rated_ hotels does not indicated any relationship between 1.2 and 3 miles. After 3 miles, as distance changes by one mile highly rated  declines. We created a binary variable for _Stars_ called _top_stars_ which equals to one if _stars_ is more than _3_, _0_ otherwise. Other variables are _price_ which was transformed to log of Price and _weekend_ which is binary variable
 
 ## Analysis
-
-In the first place in order to understand what functional form to include in the regression. We examined lowess regression with highly rated hotels to decide in what functional form to include stars and distance. The figures in the appendix shows that distance and highly rated hotels have negative relationship. distance increases by one mile and. between 1.2 miles and 3 miles highly rated hotels and distance does not indicate in correlation. after 3 miles, highly rated declines. as the graph indicates after 3 stars the relationship between highly rated and stars changes. Price and highly rated has interesting relationship one unit change in price till USD 250 has positive relationship, after it declines. Thus, we included distance as a piece-wise linear spline with knots at 1.2 and 3 miles and stars with a knot at 3 stars. For additional variables we included log of price as a piece-wise linear spline with knot at 5.5. Other variables are _price_ which was transformed to log of Price and _weekend_. 
-
-
 
 
 
@@ -104,7 +102,7 @@ datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + 
 - Created _highly_rated_ if rating >= 4
 
 ```{r include=FALSE, message=FALSE, warning=FALSE}
-model_formula <- formula(highly_rated ~ high_stars + lspline(distance, c(1.2, 3)) + price + weekend )
+model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)) + price + weekend )
 ```
 
 
@@ -152,9 +150,9 @@ probit_marg <- probitmfx(model_formula, data=data, atmean=FALSE, robust = T)
 
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 cm <- c('(Intercept)' = 'Constant')
-summary1 <- msummary(list(lpm, logit, logit_marg, probit, probit_marg),
+msummary(list(lpm, logit, logit_marg, probit, probit_marg),
          fmt="%.3f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2|PseudoR2',
          stars=c('*' = .05, '**' = .01),
@@ -166,12 +164,12 @@ summary1 <- msummary(list(lpm, logit, logit_marg, probit, probit_marg),
 
 
 
-```{r}
+```{r echo=FALSE, message=FALSE, warning=FALSE}
 # adding pseudo R2 (not work for mfx)
 glance_custom.glm <- function(x) data.frame(`PseudoR2` = pR2(x)["McFadden"])
 cm <- c('(Intercept)' = 'Constant')
 
-summary2 <- msummary(list(lpm, logit, probit),
+msummary(list(lpm, logit, probit),
          fmt="%.3f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
          stars=c('*' = .05, '**' = .01),
@@ -181,7 +179,7 @@ summary2 <- msummary(list(lpm, logit, probit),
 
 
 
-```{r message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 
 #distance
 g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
@@ -195,7 +193,7 @@ g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
 ```
 
 
-```{r message=FALSE, warning=FALSE}
+```{r include=FALSE}
 g2 <- ggplot(data = data) +
   geom_point(aes(x=pred_lpm, y=pred_probit, color="Probit"), size=0.5,  shape=16) +
   geom_point(aes(x=pred_lpm, y=pred_logit,  color="Logit"), size=0.5,  shape=16) +
@@ -207,13 +205,17 @@ g2 <- ggplot(data = data) +
   theme_bw() +
 theme(legend.position=c(0.55,0.08),
         legend.direction = "horizontal",
-        legend.text = element_text(size = 7))
+        legend.text = element_text(size = 7)) + 
+  ggtitle("Predicted Probability of LMP, Logit and Probit Models" ) +
+ theme(plot.title = element_text(size = 12), axis.title = element_text(size=8) )  
 
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+g1
 
-
-
+g2
+```
 
 
 
