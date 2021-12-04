@@ -72,17 +72,14 @@ The Question of this case study is how hotels stars is related to highly rated h
 
 ## Data Transformation
 
-As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than 4, 0 otherwise. We transformed stars to a binary variables called _top_stars_ which equals to one if _stars_ is more than 4, and 0 otherwise. We examined _Lowess_ regression with highly rated hotels and distance. Looking at kinks from Figure 1, we decided to put two knots at 1.2 and 3 miles. Other control variables log of Price, _lnprince_, and _weekend_ (binary variable). We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night, and we removed null and duplicated values from the data set. 
+As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than 4, 0 otherwise. We transformed stars to a binary variables called _top_stars_ which equals to one if _stars_ is more than 4, and 0 otherwise. We examined _Lowess_ regression with highly rated hotels and distance. Looking at kinks from Figure 1, we decided to put two knots at 1.2 and 3 miles. Other control variables log of Price, _lnprince_, and _weekend_ (binary variable). We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night, and we removed null and duplicated values from the data set. We are interested to estimate the probability of highly rated hotels on hotels having top stars(4, 5 stars)  and other explanatory variables such as distance, log of price and weekend.
 
 ## Anaalysis
 
-The summary table shows us that mean of highly_rated lies above 0.5 indicating the presence of more highly rated hotels in the dataset. Table 2 shows six regression models: lpm0 lpm, logit, marginal logit, probit and marginal probit. The constant in the model 1, _lmp0_ indicates that Top stars hotels are 43. percentage point more likely to be highly rated which mean _63.4%_ of them are highly rated. The 95% confidence interval around the slope parameter is [0.473, 0.521] which implies that we can be 95% confident that top stars in the sample are highly rated with the higher probability of 47% to 52%. 
-Moreover, we examined lowess regression with distance as the figure 1 shows, we included distance as a piecewise linear spline with knots at 1.2 and 3 miles. In the regressions Table 2, second column, LMP, the coefficient for top_stars is _0.421_ comparing hotels with the same distance from city center, price and if it is weekend, the hotles with the top stars are 42.1% more likely to be highly rated. The 95% confidence interval is [0.397, 0.445], and it does not contain zero which indicates that top stars is positively related with highly rated hotels.
-The other variables also show interesting results. 
+The summary table shows us that mean of highly_rated lies above 0.5 indicating the presence of more highly rated hotels in the dataset. Table 2 shows six regression models: lpm0 lpm, logit, marginal logit, probit and marginal probit. Model 1, _lpm0_ indicates that Top stars hotels are 43.1 percentage points are more likely to be highly rated. The 95% confidence interval around the slope parameter is [0.413, 0.449] which implies that we can be 95% confident that top stars in the hotels-europe are highly rated. As the distance from city center increases by one unit within 0 - 1.2 mile the probability of highly rated hotels decreases by 10.8%. Interestingly, the increase of one unit distance between the 1.2-3 mile distance has no effect on the probability of highly rated hotel. However, this probability tends to decreases by 24.1% by the increase of distance by one unit beyond 3 miles.
 
+By looking at the logit and probit estimates for our model, the probability of highly rated to top stars, distance, price and weekend are same as linear model. By looking at the column 3 and 4, the Logit Coefficients are almost five times the size of corresponding logit marginal differences. Furthermore, in the column 5 and 6, probit coefficient is almost three times the size of corresponding probit marginal differences. It is interesting to observe that the two marginal differences, logit and probit, are the same with LPM coefficients in column 2. Thus, we will be interpreting the coefficients of marginals differences of both logit and probit models. Figure 2 helps visualize the findings of three models with predicted probabilities of logit and probit on y axis and predicted probability of LPM in the x axis. We infer that logit and probit are very similar with each other and very close to LPM as shown by the S-shaped curve lying close to 45 degree line. To generalize the result we can say that top stars hotels have a around 30% higher probability to be highly rated with other variables (distance, price and weekend) being the same. In order to compare logit and probit models we calculated the Pseudo R2 and found that both models have the same Pseudo R2. 
 
-
-By looking at the logit and probit estimates for the model, the probability of highly rated to top stars, distance and conditional on price and weekend are same variables as linear model. By looking to the column 3 and 4, the Logit Coefficients are almost five times the size of corresponding logit marginal differences. Furthermore, in the column 5 and 6, probit coefficient is almost three times the size of corresponding probit marginal differences. It is interesting to observe that the two marginal differences, logit and probit, are the same and they are the same with LMP coefficients in column 2 which is applicable for of the independent variables. To generalize the result, it shows that hotels with top stars other things (distance, price and if it is weekend) the same are highly rated. To sum, top stars hotels have a 43 percent points higher chance to be highly rated.  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -95,7 +92,6 @@ datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + 
 ```
 
 
-
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)) + lnprice + weekend )
 ```
@@ -104,7 +100,7 @@ model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3))
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 
 # lpm (repeating the previous regression)
-lmp0 <- lm(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)), data=data)
+lpm0 <- lm(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)), data=data)
 
 lpm <-lm(model_formula, data=data, vcov = "hetreo")
 summary(lpm, vcov=sandwich)
@@ -146,35 +142,35 @@ probit_marg <- probitmfx(model_formula, data=data, atmean=FALSE, robust = T)
 ```
 
 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE, out.width="10%"}
+```{r message=FALSE, warning=FALSE, include=FALSE, results='hide'}
 cm <- c('(Intercept)' = 'Constant')
-msummary(list("(1) LMP0" = lmp0, "(2)LMP" = lpm, "(3) logit coeffs" = logit, "(4) logit Marg" = logit_marg, "(5) Probit" = probit, "(6) Probit Marg" = probit_marg),
+summary1 <- msummary(list("(1) LPM0" = lpm0, "(2)LPM" = lpm, "(3) logit coeffs" = logit, "(4) logit Marg" = logit_marg, "(5) Probit" = probit, "(6) Probit Marg" = probit_marg),
          fmt="%.3f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2|PseudoR2',
          stars=c('*' = .05, '**' = .01),
          coef_rename = cm,
-         coef_omit = 'as.factor(country)*',
-         title = "The Probability of Highly rated hotels and top stars - LMP, Logit, and Probit models"
-         
+         title = "The Probability of Highly rated hotels and top stars Hotels- LPM, Logit, and Probit models"
 )
 ```
 
 
-
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r message=FALSE, warning=FALSE, include=FALSE}
 # adding pseudo R2 (not work for mfx)
 glance_custom.glm <- function(x) data.frame(`PseudoR2` = pR2(x)["McFadden"])
 cm <- c('(Intercept)' = 'Constant')
 
-msummary(list(lpm, logit, probit),
+summary2 <- msummary(list(lpm, logit, probit),
          fmt="%.3f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC',
          stars=c('*' = .05, '**' = .01),
-         coef_rename = cm
+         coef_rename = cm, 
+         title = "Logit, Probit with Pseudo R2"
 )
 ```
 
+```{r echo=FALSE, message=FALSE, warning=FALSE}
+summary1
+```
 
 
 ```{r message=FALSE, warning=FALSE, include=FALSE}
@@ -185,8 +181,8 @@ g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
   scale_y_continuous(expand = c(0.01,0.01),limits = c(0,1), breaks = seq(0,1,0.2), labels = scales::percent) +
   labs(x = "Distance",y = "Probability of Highly Rated") +
   theme_bw() +
-  ggtitle("Probability of Highly Rated vs Distance") +
-  theme(plot.title = element_text(size = 12), axis.title = element_text(size=8) )
+  ggtitle("Figure 1 : Probability of Highly Rated vs Distance") +
+  theme(plot.title = element_text(size = 10), axis.title = element_text(size=8) )
 
 ```
 
@@ -202,18 +198,19 @@ g2 <- ggplot(data = data) +
   scale_x_continuous(expand = c(0.00,0.0), limits = c(0,1), breaks = seq(0,1,0.2)) +
   scale_color_manual(name = "", values=c("#541352FF", "#3a5e8cFF","#10a53dFF")) +
   theme_bw() +
-theme(legend.position=c(0.55,0.08),
+theme(legend.position=c(0.6,0.08),
         legend.direction = "horizontal",
-        legend.text = element_text(size = 7)) + 
-  ggtitle("Predicted Probability of LMP, Logit and Probit Models" ) +
- theme(plot.title = element_text(size = 12), axis.title = element_text(size=8) )  
+        legend.text = element_text(size = 6)) + 
+  ggtitle("Figure 2 : Predicted Probability of LPM, Logit and Probit Models" ) +
+ theme(plot.title = element_text(size = 10), axis.title = element_text(size=8) )  
 
 ```
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, fig.height=3.5, fig.width=3.5}
 g1
+
 
 g2
 ```
@@ -223,10 +220,10 @@ g2
 
 - Filtered the data for **Paris**
 - Selected Hotels and Apartments for accommodation type
-- Price is less than _*600*_
-- Removed null values from _stars_
+- Filtered for Price is less than _*600*_
 - Removed duplicates
 - Removed Null values from _rating_, _stars_, and _distance_
 - Created log of price, _lnprice_
 - Created _highly_rated_ if rating >= 4
+- Created _top_stars_ if stars >= 4
 
