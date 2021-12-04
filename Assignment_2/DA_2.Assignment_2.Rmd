@@ -60,7 +60,7 @@ data$lnprice <- log(data$price)
 
 
 data$highly_rated <- ifelse(data$rating>=4, 1, 0)
-data$top_stars <- ifelse(data$stars>=3, 1, 0)
+data$top_stars <- ifelse(data$stars>=4, 1, 0)
 
 # check for duplicates
 data<-data[!duplicated(data),]
@@ -72,10 +72,12 @@ The Question of this case study is how hotels stars is related to highly rated h
 
 ## Data Transformation
 
-As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than _4_, _0_ otherwise.  We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night, and we removed null and duplicated values from the data set. 
-In order to understand what functional form to include in the regression we examined _Lowess_ regression with highly rated hotels and distance. _Figure 1_ in the appendix shows that distance and highly rated hotels have negative relationship from city center to 1.2 miles away from center, however _highly_rated_ hotels does not indicated any relationship between 1.2 and 3 miles. After 3 miles, as distance changes by one mile highly rated  declines. We created a binary variable for _Stars_ called _top_stars_ which equals to one if _stars_ is more than _3_, _0_ otherwise. Other variables are _price_ which was transformed to log of Price and _weekend_ which is binary variable
+As a process of filtering and data transformation, we use hotel user rating as the dependent variables and transformed it to a binary variable called _highly_rated_ which equals to one if _rating_ is more than 4, 0 otherwise. We transformed stars to a binary variables called _top_stars_ which equals to one if _stars_ is more than 4, and 0 otherwise. We examined _Lowess_ regression with highly rated hotels and distance. Looking at kinks from Figure 1, we decided to put two knots at 1.2 and 3 miles. Other control variables log of Price, _lnprince_, and _weekend_ (binary variable). We selected _**Paris**_ City and considered _**Hotels**_ as accommodation type. Moreover, we excluded hotels with less than _USD 600_ per night, and we removed null and duplicated values from the data set. 
 
-## Analysis
+## Anaalysis
+before we bgin the regression, the  summary table showed us  t
+
+Figure 1 in the appendix shows that distance and highly rated hotels have negative relationship from city center to 1.2 miles away from center, however _highly_rated_ hotels does not indicated any relationship between 1.2 and 3 miles. After 3 miles, as distance changes by one mile highly rated  declines
 
 Table 2 shows six regression models: lpm0 lpm, logit, marginal logit, probit and marginal probit. The constant in the model 1, _lmp0_ indicates that _13.7%_ of low star hotels are highly rated. Top stars hotels are _49.7_ percentage point more likely to be highly rated which mean _63.4%_ of them are highly rated. The 95% confidence interval around the slope parameter is [0.473, 0.521] which implies that we can be 95% confident that top stars in the sample are highly rated with the higher probability of 47% to 52%. 
 Moreover, we examined lowess regression with distance as the figure 1 shows, we included distance as a piecewise linear spline with knots at 1.2 and 3 miles. In the regressions Table 2, second column, LMP, the coefficient for top_stars is _0.421_ comparing hotels with the same distance from city center, price and if it is weekend, the hotles with the top stars are 42.1% more likely to be highly rated. The 95% confidence interval is [0.397, 0.445], and it does not contain zero which indicates that top stars is positively related with highly rated hotels.
