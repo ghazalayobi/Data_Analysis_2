@@ -6,6 +6,7 @@ editor_options:
   chunk_output_type: inline
 ---
 
+
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 # CLEAR MEMORY
 rm(list=ls())
