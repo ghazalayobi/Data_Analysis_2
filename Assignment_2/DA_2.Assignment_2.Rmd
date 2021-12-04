@@ -78,8 +78,11 @@ In order to understand what functional form to include in the regression we exam
 
 ## Analysis
 
-Table 2 shows five regression mpdels: lpm, logit, marginal logit, probit and marginal probit regression results. 
+Table 2 shows six regression models: lpm0 lpm, logit, marginal logit, probit and marginal probit. The constant in the model 1, _lmp0_ indicates that _13.7%_ of low star hotels are highly rated. Top stars hotels are _49.7_ percentage point more likely to be highly rated which mean _63.4%_ of them are highly rated. The 95% confidence interval around the slope parameter is [0.473, 0.521] which implies that we can be 95% confident that top stars in the sample are highly rated with the higher probability of 47% to 52%. 
+Moreover, we examined lowess regression with distance as the figure 1 shows, we included distance as a piecewise linear spline with knots at 1.2 and 3 miles. In the regressions Table 2, second column, LMP, the coefficient for top_stars is _0.421_ comparing hotels with the same distance from city center, price and if it is weekend, the hotles with the top stars are 42.1% more likely to be highly rated. The 95% confidence interval is [0.397, 0.445], and it does not contain zero which indicates that top stars is positively related with highly rated hotels.
+The other variables also show interesting results. 
 
+By looking at the logit and probit estimates for the model, the probability of highly rated to top stars, distance and conditional on price and weekend are same variables as linear model. By looking to the column 3 and 4, the Logit Coefficients are almost five times the size of corresponding logit marginal differences. Furthermore, in the column 5 and 6, probit coefficient is almost three times the size of corresponding probit marginal differences. It is interesting to observe that the two marginal differences, logit and probit, are the same and they are the same with LMP coefficients in column 2 which is applicable for of the independent variables. To generalize the result, it shows that hotels with top stars other things (distance, price and if it is weekend) the same are highly rated. To sum, top stars hotels have a 43 percent points higher chance to be highly rated.  
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 
@@ -92,14 +95,6 @@ datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + 
 ```
 
 
-- Filtered the data for **Paris**
-- Selected Hotels and Apartments for accommodation type
-- Price is less than _*600*_
-- Removed null values from _stars_
-- Removed duplicates
-- Removed Null values from _rating_, _stars_, and _distance_
-- Created log of price, _lnprice_
-- Created _highly_rated_ if rating >= 4
 
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)) + price + weekend )
@@ -214,6 +209,8 @@ theme(legend.position=c(0.55,0.08),
 
 ```
 
+
+
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
 g1
 
@@ -221,4 +218,14 @@ g2
 ```
 
 
+## Appendix
+
+- Filtered the data for **Paris**
+- Selected Hotels and Apartments for accommodation type
+- Price is less than _*600*_
+- Removed null values from _stars_
+- Removed duplicates
+- Removed Null values from _rating_, _stars_, and _distance_
+- Created log of price, _lnprice_
+- Created _highly_rated_ if rating >= 4
 
