@@ -27,7 +27,6 @@ library(ggplot2)
 ```
 
 
-
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 # Loading the data
 # Get the dataset: now we use all the observations from Europe:
@@ -97,14 +96,14 @@ datasummary( highly_rated + distance + stars ~ Mean + SD + Min + Max + Median + 
 
 
 ```{r include=FALSE, message=FALSE, warning=FALSE}
-model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)) + price + weekend )
+model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)) + lnprice + weekend )
 ```
 
 
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 
 # lpm (repeating the previous regression)
-lmp0 <- lm(highly_rated ~ top_stars, data=data)
+lmp0 <- lm(highly_rated ~ top_stars + lspline(distance, c(1.2, 3)), data=data)
 
 lpm <-lm(model_formula, data=data, vcov = "hetreo")
 summary(lpm, vcov=sandwich)
@@ -188,6 +187,18 @@ g1 <- ggplot(data = data, aes(x=distance, y=highly_rated)) +
   ggtitle("Probability of Highly Rated vs Distance") +
   theme(plot.title = element_text(size = 12), axis.title = element_text(size=8) )
 
+```
+
+```{r}
+#distance
+g11 <- ggplot(data = data, aes(x=stars, y=highly_rated)) +
+  geom_smooth(method="loess", color="3a5e8cFF") +
+  scale_y_continuous(expand = c(0.01,0.01),limits = c(0,1), breaks = seq(0,1,0.2), labels = scales::percent) +
+  labs(x = "Distance",y = "Probability of Highly Rated") +
+  theme_bw() +
+  ggtitle("Probability of Highly Rated vs Distance") +
+  theme(plot.title = element_text(size = 12), axis.title = element_text(size=8) )
+g11
 ```
 
 
