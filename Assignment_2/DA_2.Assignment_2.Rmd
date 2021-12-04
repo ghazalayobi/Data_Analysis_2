@@ -78,7 +78,7 @@ In order to understand what functional form to include in the regression we exam
 
 ## Analysis
 
-
+Table 2 shows five regression mpdels: lpm, logit, marginal logit, probit and marginal probit regression results. 
 
 
 ```{r echo=FALSE, message=FALSE, warning=FALSE}
@@ -109,6 +109,8 @@ model_formula <- formula(highly_rated ~ top_stars + lspline(distance, c(1.2, 3))
 ```{r include=FALSE, message=FALSE, warning=FALSE}
 
 # lpm (repeating the previous regression)
+lmp0 <- lm(highly_rated ~ top_stars, data=data)
+
 lpm <-lm(model_formula, data=data, vcov = "hetreo")
 summary(lpm, vcov=sandwich)
 
@@ -150,14 +152,15 @@ probit_marg <- probitmfx(model_formula, data=data, atmean=FALSE, robust = T)
 
 
 
-```{r echo=FALSE, message=FALSE, warning=FALSE}
+```{r echo=FALSE, message=FALSE, warning=FALSE, out.width="10%"}
 cm <- c('(Intercept)' = 'Constant')
-msummary(list(lpm, logit, logit_marg, probit, probit_marg),
+msummary(list("(1) LMP0" = lmp0, "(2)LMP" = lpm, "(3) logit coeffs" = logit, "(4) logit Marg" = logit_marg, "(5) Probit" = probit, "(6) Probit Marg" = probit_marg),
          fmt="%.3f",
          gof_omit = 'DF|Deviance|Log.Lik.|F|R2 Adj.|AIC|BIC|R2|PseudoR2',
          stars=c('*' = .05, '**' = .01),
          coef_rename = cm,
-         coef_omit = 'as.factor(country)*'
+         coef_omit = 'as.factor(country)*',
+         title = "The Probability of Highly rated hotels and top stars - LMP, Logit, and Probit models"
          
 )
 ```
